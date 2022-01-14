@@ -17,6 +17,12 @@
       <UniqueIdentifier>{bdc29781-2bdb-498d-83f5-a7e72559dfa1}</UniqueIdentifier>
       <Extensions>ps;vs</Extensions>
     </Filter>
+    <Filter Include="Header Files\Student Files">
+      <UniqueIdentifier>{b929fbb3-743c-4b34-a90a-e8c4224bbd92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Student Files">
+      <UniqueIdentifier>{7ccc8395-576a-40dc-80d6-499a7e1ee18f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h">
@@ -70,6 +76,9 @@
     <ClInclude Include="src\shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cube.h">
+      <Filter>Header Files\Student Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Model.cpp">
@@ -101,6 +110,9 @@
     </ClCompile>
     <ClCompile Include="src\shader.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cube.cpp">
+      <Filter>Source Files\Student Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

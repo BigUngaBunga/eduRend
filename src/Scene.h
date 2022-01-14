@@ -7,6 +7,7 @@
 #include "InputHandler.h"
 #include "Camera.h"
 #include "Model.h"
+#include "Cube.h"
 #include "Texture.h"
 
 // New files
@@ -75,6 +76,7 @@ class OurTestScene : public Scene
 	Camera* camera;
 
 	QuadModel* quad;
+	Cube* cube;
 	OBJModel* sponza;
 
 	// Model-to-world transformation matrices

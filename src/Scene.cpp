@@ -47,6 +47,7 @@ void OurTestScene::Init()
 
 	// Create objects
 	quad = new QuadModel(dxdevice, dxdevice_context);
+	cube = new Cube(dxdevice, dxdevice_context, 1.2f);
 	sponza = new OBJModel("assets/crytek-sponza/sponza.obj", dxdevice, dxdevice_context);
 }
 
@@ -112,6 +113,7 @@ void OurTestScene::Render()
 	// Load matrices + the Quad's transformation to the device and render it
 	UpdateTransformationBuffer(Mquad, Mview, Mproj);
 	quad->Render();
+	cube->Render();
 
 	// Load matrices + Sponza's transformation to the device and render it
 	UpdateTransformationBuffer(Msponza, Mview, Mproj);
@@ -121,6 +123,7 @@ void OurTestScene::Render()
 void OurTestScene::Release()
 {
 	SAFE_DELETE(quad);
+	SAFE_DELETE(cube);
 	SAFE_DELETE(sponza);
 	SAFE_DELETE(camera);
 
