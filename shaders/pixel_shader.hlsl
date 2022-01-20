@@ -19,5 +19,5 @@ float4 PS_main(PSIn input) : SV_Target
 	return float4(input.Normal*0.5+0.5, 1);
 	
 	// Debug shading #2: map and return texture coordinates as a color (blue = 0)
-//	return float4(input.TexCoord, 0, 1);
+	//return float4(input.TexCoord, 0, 1);
 }

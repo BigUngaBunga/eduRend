@@ -47,7 +47,7 @@ void OurTestScene::Init()
 
 	// Create objects
 	quad = new QuadModel(dxdevice, dxdevice_context);
-	cube = new Cube(dxdevice, dxdevice_context, 1.2f);
+	cube = new Cube(dxdevice, dxdevice_context, 1.7f);
 	sponza = new OBJModel("assets/crytek-sponza/sponza.obj", dxdevice, dxdevice_context);
 }
 
