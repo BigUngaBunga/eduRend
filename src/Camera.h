@@ -29,6 +29,8 @@ public:
 	float zNear, zFar;	
 						
 	vec3f position;
+	vec3f rotation;
+	float rotationSpeed;
 
 	Camera(
 		float vfov,
@@ -38,6 +40,8 @@ public:
 		vfov(vfov), aspect(aspect), zNear(zNear), zFar(zFar)
 	{
 		position = {0.0f, 0.0f, 0.0f};
+		rotation = { 0.0f, 0.0f, 0.0f };
+		rotationSpeed = 0.069f;
 	}
 
 	// Move to an absolute position
@@ -51,7 +55,19 @@ public:
 	//
 	void move(const vec3f& v)
 	{
-		position += v;
+		position += GetRotation().get_3x3() * v;
+	}
+
+	void rotate(const vec3f& newRotation) {
+		this->rotation += newRotation * rotationSpeed;
+	}
+
+	void SetZeroRoll() {
+		rotation.z = 0;
+	}
+
+	mat4f GetRotation() const {
+		return mat4f::rotation(rotation.z, rotation.y, rotation.x);
 	}
 
 	// Return World-to-View matrix for this camera
@@ -64,8 +80,11 @@ public:
 		// World-to-View then is the inverse of T(p)*R;
 		//		inverse(T(p)*R) = inverse(R)*inverse(T(p)) = transpose(R)*T(-p)
 		// Since now there is no rotation, this matrix is simply T(-p)
+		
+		mat4f rotationMatrix = GetRotation();
+		rotationMatrix.transpose();
 
-		return mat4f::translation(-position);
+		return rotationMatrix * mat4f::translation(-position);
 	}
 
 	// Matrix transforming from View space to Clip space

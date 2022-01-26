@@ -1,11 +1,13 @@
+#define _USE_MATH_DEFINES
 #include "Cube.h"
+#include <cmath>
 using std::cout;
 
 Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const float length) : Model(dxdevice, dxdevice_context) {
 
 	float point = length / 2;
-	float change = 2;
 	std::array<vec3f, 6> cubeNormals = { vec3f{0, 0, 1}, vec3f{0, 0, -1}, vec3f{-1, 0, 0}, vec3f{1, 0, 0}, vec3f{0, 1, 0}, vec3f{0, -1, 0} };
+
 	std::array<std::array<vec3f, 4>, 2> cubeCorners = { vec3f{point, point, point}, vec3f{-point, point, point}, vec3f{point, point, -point}, vec3f{-point, point, -point},
 					 vec3f{point, -point, point}, vec3f{-point, -point, point}, vec3f{point, -point, -point}, vec3f{-point, -point, -point} };
 

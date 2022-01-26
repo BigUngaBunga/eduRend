@@ -59,16 +59,29 @@ void OurTestScene::Update(
 	float dt,
 	InputHandler* input_handler)
 {
+	float cameraSpeed = input_handler->IsKeyPressed(Keys::Shift) ? camera_vel * 5 : camera_vel;
+
+	//Camera rotation
+	camera->rotate({ -(float)input_handler->GetMouseDeltaY() * dt, -(float)input_handler->GetMouseDeltaX() * dt, 0 });
+	if (input_handler->IsKeyPressed(Keys::Q))
+		camera->rotate({ 0, 0, cameraSpeed * dt * 3.0f });
+	if (input_handler->IsKeyPressed(Keys::E))
+		camera->rotate({ 0, 0, -cameraSpeed * dt * 3.0f });
+
+	if (input_handler->IsKeyPressed(Keys::Tab))
+		camera->SetZeroRoll();
+
+
 	// Basic camera control
 	if (input_handler->IsKeyPressed(Keys::Up) || input_handler->IsKeyPressed(Keys::W))
-		camera->move({ 0.0f, 0.0f, -camera_vel * dt });
+		camera->move({ 0.0f, 0.0f, -cameraSpeed * dt });
 	if (input_handler->IsKeyPressed(Keys::Down) || input_handler->IsKeyPressed(Keys::S))
-		camera->move({ 0.0f, 0.0f, camera_vel * dt });
+		camera->move({ 0.0f, 0.0f, cameraSpeed * dt });
 	if (input_handler->IsKeyPressed(Keys::Right) || input_handler->IsKeyPressed(Keys::D))
-		camera->move({ camera_vel * dt, 0.0f, 0.0f });
+		camera->move({ cameraSpeed * dt, 0.0f, 0.0f });
 	if (input_handler->IsKeyPressed(Keys::Left) || input_handler->IsKeyPressed(Keys::A))
-		camera->move({ -camera_vel * dt, 0.0f, 0.0f });
-
+		camera->move({ -cameraSpeed * dt, 0.0f, 0.0f });
+	
 	// Now set/update object transformations
 	// This can be done using any sequence of transformation matrices,
 	// but the T*R*S order is most common; i.e. scale, then rotate, and then translate.
