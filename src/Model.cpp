@@ -98,6 +98,9 @@ OBJModel::OBJModel(
 	ID3D11DeviceContext* dxdevice_context)
 	: Model(dxdevice, dxdevice_context)
 {
+
+	transform = GetBaseTransform();
+
 	// Load the OBJ
 	OBJLoader* mesh = new OBJLoader();
 	mesh->Load(objfile);
@@ -203,6 +206,48 @@ void OBJModel::Render() const
 		dxdevice_context->DrawIndexed(irange.size, irange.start, 0);
 	}
 }
+
+
+//TODO fixa
+void OBJModel::UpdateTransform() {
+	transform = mat4f_identity;
+	for (int i = 0 ; i < parents.size(); ++i)
+		transform = transform * parents[i]->GetBaseTransform();
+	transform = transform * GetBaseTransform();
+}
+
+void OBJModel::AddParentModel(OBJModel* parent) {
+	for (auto parentModel : parent->parents)
+		parents.push_back(parentModel);
+
+	parents.push_back(parent);
+}
+
+mat4f OBJModel::GetBaseTransform() const {
+	if (calculateRotationFirst)
+		return mat4f::rotation(angle, rotation) * mat4f::translation(translation) * mat4f::scaling(scale);
+	return mat4f::translation(translation) * mat4f::rotation(angle, rotation) * mat4f::scaling(scale);
+}
+
+void OBJModel::SetTranslation(const vec3f& newTranslation) { translation = newTranslation; }
+void OBJModel::SetRotation(const vec3f& newRotation) { rotation = newRotation; }
+void OBJModel::SetAngle(const float& newAngle) { angle = newAngle;}
+void OBJModel::SetScale(const vec3f& newScale) { scale = newScale;}
+void OBJModel::SetScale(const float& newScale) { scale = {newScale, newScale, newScale}; }
+
+void OBJModel::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale) {
+	SetTranslation(newTranslation);
+	SetRotation(newRotation);
+	SetScale(newScale);
+}
+void OBJModel::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale) {
+	SetTranslation(newTranslation);
+	SetRotation(newRotation);
+	SetScale(newScale);
+}
+
+mat4f* OBJModel::GetTransform() { return &transform; }
+//TODO fixa
 
 OBJModel::~OBJModel()
 {

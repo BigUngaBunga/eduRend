@@ -84,6 +84,13 @@ class OBJModel : public Model
 	std::vector<IndexRange> index_ranges;
 	std::vector<Material> materials;
 
+
+	vec3f translation = { 0, 0, 0 };
+	vec3f rotation = { 0, 0, 0 };
+	vec3f scale = { 1, 1, 1 };
+	float angle = 0.0f;
+	bool calculateRotationFirst = false;
+
 	void append_materials(const std::vector<Material>& mtl_vec)
 	{
 		materials.insert(materials.end(), mtl_vec.begin(), mtl_vec.end());
@@ -91,12 +98,32 @@ class OBJModel : public Model
 
 public:
 
+	mat4f transform;
+	std::vector<OBJModel*> parents = std::vector<OBJModel*>();
+
 	OBJModel(
 		const std::string& objfile,
 		ID3D11Device* dxdevice,
 		ID3D11DeviceContext* dxdevice_context);
 
 	virtual void Render() const;
+
+private:
+	mat4f GetBaseTransform() const;
+	void SetTranslation(const vec3f& newTranslation);
+	void SetRotation(const vec3f& newRotation);
+	void SetScale(const vec3f& newScale);
+	void SetScale(const float& newScale);
+	void SetRotationCalculation(bool calculateFirst) { calculateRotationFirst = calculateFirst; }
+public:
+	void AddParentModel(OBJModel* parent);
+	void UpdateTransform();
+	void SetAngle(const float& newAngle);
+	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale);
+	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale = 1);
+
+	mat4f* GetTransform();
+	//void PrintTransform() const;
 
 	~OBJModel();
 };

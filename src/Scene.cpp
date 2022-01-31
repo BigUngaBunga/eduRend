@@ -46,9 +46,30 @@ void OurTestScene::Init()
 	camera->moveTo({ 0, 0, 5 });
 
 	// Create objects
-	quad = new QuadModel(dxdevice, dxdevice_context);
-	cube = new Cube(dxdevice, dxdevice_context, 1.7f);
+	cube = new Cube(dxdevice, dxdevice_context, 1.337f);
 	sponza = new OBJModel("assets/crytek-sponza/sponza.obj", dxdevice, dxdevice_context);
+
+	star = new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context);
+	smallPlanet = new Cube(dxdevice, dxdevice_context, 3);
+	moon = new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context);
+
+	ship = new OBJModel("assets/longship/longship.obj", dxdevice, dxdevice_context);
+
+
+	models.push_back(new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
+	models.back()->SetTransform({ 0.0f, 0.0f, -10 }, { 0.0f, 1.0f, 0.0f }, 2.0f);
+
+	models.push_back(new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
+	models.back()->SetTransform({ 1.6f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f });
+	models.back()->AddParentModel(models.front());
+
+	models.push_back(new OBJModel("assets/tyre/Tyre.obj", dxdevice, dxdevice_context));
+	models.back()->SetTransform({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0.1f);
+	models.back()->AddParentModel(models.at(models.size() - 2));
+
+	models.push_back(new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
+	models.back()->SetTransform({ 1.6f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f });
+	models.back()->AddParentModel(models.front());
 }
 
 //
@@ -89,7 +110,7 @@ void OurTestScene::Update(
 	// via e.g. Mquad = linalg::mat4f_identity; 
 
 	// Quad model-to-world transformation
-	Mquad = mat4f::translation(0, 0, 0) *			// No translation
+	Mquad = mat4f::translation(2, 0, 0) *			// No translation
 		mat4f::rotation(-angle, 0.0f, 1.0f, 0.0f) *	// Rotate continuously around the y-axis
 		mat4f::scaling(1.5, 1.5, 1.5);				// Scale uniformly to 150%
 
@@ -97,6 +118,40 @@ void OurTestScene::Update(
 	Msponza = mat4f::translation(0, -5, 0) *		 // Move down 5 units
 		mat4f::rotation(fPI / 2, 0.0f, 1.0f, 0.0f) * // Rotate pi/2 radians (90 degrees) around y
 		mat4f::scaling(0.05f);						 // The scene is quite large so scale it down to 5%
+
+	mStar = mat4f::translation(0, 3, 0) *			
+		mat4f::scaling(1.5, 1.5, 1.5);
+
+	mPlanet = mat4f::rotation(-angle, 0.0f, 1.0f, 0.0f) *
+		mat4f::translation(5, 0, 0) *
+		mat4f::rotation(cos(angle) - sin(angle), 0.3f, 0.1f) *
+		mat4f::scaling(0.5, 0.5, 0.5);
+
+	mMoon = mat4f::rotation(angle * 2, 0.0f, 1.0f, 0.0f) *
+		mat4f::translation(3, 0, 0) *
+		mat4f::scaling(0.5, 0.5, 0.5);
+
+	mShip = mat4f::rotation(angle , 1.0f, 0.0f, 0.0f) *
+		mat4f::translation(0, 2, 0) *
+		mat4f::scaling(0.2f);
+
+	mMoon = mStar * mPlanet * mMoon;
+	mPlanet = mStar * mPlanet;
+	mShip = mStar * mShip;
+
+	//TODO fixa
+	//planet->SetAngle(angle);
+	//handSatelite->SetAngle(angle/2);
+	//inverseHandSatelite->SetAngle(angle / 3);
+	//wheelSatelite->SetAngle(angle);
+
+	for (auto model : models) {
+		model->SetAngle(angle);
+		model->UpdateTransform();
+	}
+		
+	//TODO fixa
+
 
 	// Increment the rotation angle.
 	angle += angle_vel * dt;
@@ -125,8 +180,24 @@ void OurTestScene::Render()
 
 	// Load matrices + the Quad's transformation to the device and render it
 	UpdateTransformationBuffer(Mquad, Mview, Mproj);
-	quad->Render();
 	cube->Render();
+
+
+	for (auto model : models) {
+		UpdateTransformationBuffer(model->transform, Mview, Mproj);
+		model->Render();
+	}
+
+	UpdateTransformationBuffer(mStar, Mview, Mproj);
+	star->Render();
+	UpdateTransformationBuffer(mPlanet, Mview, Mproj);
+	smallPlanet->Render();
+	UpdateTransformationBuffer(mMoon, Mview, Mproj);
+	moon->Render();
+	UpdateTransformationBuffer(mShip, Mview, Mproj);
+	ship->Render();
+
+
 
 	// Load matrices + Sponza's transformation to the device and render it
 	UpdateTransformationBuffer(Msponza, Mview, Mproj);
@@ -135,7 +206,7 @@ void OurTestScene::Render()
 
 void OurTestScene::Release()
 {
-	SAFE_DELETE(quad);
+	//SAFE_DELETE(quad);
 	SAFE_DELETE(cube);
 	SAFE_DELETE(sponza);
 	SAFE_DELETE(camera);
@@ -144,9 +215,7 @@ void OurTestScene::Release()
 	// + release other CBuffers
 }
 
-void OurTestScene::WindowResize(
-	int window_width,
-	int window_height)
+void OurTestScene::WindowResize(int window_width, int window_height)
 {
 	if (camera)
 		camera->aspect = float(window_width) / window_height;

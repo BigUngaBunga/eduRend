@@ -75,9 +75,28 @@ class OurTestScene : public Scene
 	//
 	Camera* camera;
 
-	QuadModel* quad;
+	//QuadModel* quad;
 	Cube* cube;
 	OBJModel* sponza;
+
+	OBJModel* planet;
+	OBJModel* handSatelite;
+	OBJModel* inverseHandSatelite;
+	OBJModel* wheelSatelite;
+
+	std::vector<OBJModel*> models = std::vector<OBJModel*>();
+	//std::unordered_map<std::string, OBJModel*> models = std::unordered_map<std::string, OBJModel*>();
+
+	OBJModel* star;
+	Cube* smallPlanet;
+	OBJModel* moon;
+	OBJModel* ship;
+
+	mat4f mStar;
+	mat4f mPlanet;
+	mat4f mMoon;
+	mat4f mShip;
+
 
 	// Model-to-world transformation matrices
 	mat4f Msponza;
