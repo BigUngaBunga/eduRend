@@ -89,7 +89,7 @@ class OBJModel : public Model
 	vec3f rotation = { 0, 0, 0 };
 	vec3f scale = { 1, 1, 1 };
 	float angle = 0.0f;
-	bool calculateRotationFirst = false;
+	float angleSpeed = 1.0f;
 
 	void append_materials(const std::vector<Material>& mtl_vec)
 	{
@@ -97,7 +97,7 @@ class OBJModel : public Model
 	}
 
 public:
-
+	bool calculateRotationFirst = false;
 	mat4f transform;
 	std::vector<OBJModel*> parents = std::vector<OBJModel*>();
 
@@ -119,11 +119,11 @@ public:
 	void AddParentModel(OBJModel* parent);
 	void UpdateTransform();
 	void SetAngle(const float& newAngle);
+	void SetAngleSpeed(const float& newAngleSpeed);
 	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale);
 	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale = 1);
 
 	mat4f* GetTransform();
-	//void PrintTransform() const;
 
 	~OBJModel();
 };

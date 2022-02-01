@@ -208,11 +208,11 @@ void OBJModel::Render() const
 }
 
 
-//TODO fixa
 void OBJModel::UpdateTransform() {
 	transform = mat4f_identity;
-	for (int i = 0 ; i < parents.size(); ++i)
-		transform = transform * parents[i]->GetBaseTransform();
+
+	for (auto iterator = parents.begin(); iterator != parents.end(); ++iterator)
+		transform = transform * (*iterator)->GetBaseTransform();
 	transform = transform * GetBaseTransform();
 }
 
@@ -224,16 +224,32 @@ void OBJModel::AddParentModel(OBJModel* parent) {
 }
 
 mat4f OBJModel::GetBaseTransform() const {
+	if(rotation == vec3f_zero)
+		return  mat4f::translation(translation) * mat4f::scaling(scale);
+	
 	if (calculateRotationFirst)
 		return mat4f::rotation(angle, rotation) * mat4f::translation(translation) * mat4f::scaling(scale);
 	return mat4f::translation(translation) * mat4f::rotation(angle, rotation) * mat4f::scaling(scale);
 }
 
 void OBJModel::SetTranslation(const vec3f& newTranslation) { translation = newTranslation; }
-void OBJModel::SetRotation(const vec3f& newRotation) { rotation = newRotation; }
-void OBJModel::SetAngle(const float& newAngle) { angle = newAngle;}
 void OBJModel::SetScale(const vec3f& newScale) { scale = newScale;}
 void OBJModel::SetScale(const float& newScale) { scale = {newScale, newScale, newScale}; }
+void OBJModel::SetAngleSpeed(const float& newAngleSpeed) { angleSpeed = newAngleSpeed; }
+
+
+void OBJModel::SetRotation(const vec3f& newRotation) { 
+	rotation = newRotation;
+	rotation.normalize();
+}
+
+void OBJModel::SetAngle(const float& newAngle) { 
+	angle = newAngle * angleSpeed; 
+	while (angle > 2 * PI)
+		angle -= 2 * PI;
+	while (angle < -2 * PI)
+		angle += 2 * PI;
+}
 
 void OBJModel::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale) {
 	SetTranslation(newTranslation);
@@ -247,7 +263,6 @@ void OBJModel::SetTransform(const vec3f& newTranslation, const vec3f& newRotatio
 }
 
 mat4f* OBJModel::GetTransform() { return &transform; }
-//TODO fixa
 
 OBJModel::~OBJModel()
 {

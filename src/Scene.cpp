@@ -1,6 +1,9 @@
 
 #include "Scene.h"
 
+//TODO ta bort
+#include <functional> 
+
 Scene::Scene(
 	ID3D11Device* dxdevice,
 	ID3D11DeviceContext* dxdevice_context,
@@ -28,6 +31,7 @@ OurTestScene::OurTestScene(
 	Scene(dxdevice, dxdevice_context, window_width, window_height)
 { 
 	InitTransformationBuffer();
+	InitLightAndCameraBuffer();
 	// + init other CBuffers
 }
 
@@ -55,21 +59,25 @@ void OurTestScene::Init()
 
 	ship = new OBJModel("assets/longship/longship.obj", dxdevice, dxdevice_context);
 
+	models.emplace("sphere", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
+	models.emplace("firstHand", new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
+	models.emplace("secondHand", new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
+	models.emplace("tyre", new OBJModel("assets/tyre/Tyre.obj", dxdevice, dxdevice_context));
+	models.emplace("crate", new OBJModel("assets/WoodenCrate/WoodenCrate.obj", dxdevice, dxdevice_context));
 
-	models.push_back(new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
-	models.back()->SetTransform({ 0.0f, 0.0f, -10 }, { 0.0f, 1.0f, 0.0f }, 2.0f);
+	models["sphere"]->SetTransform({ 0.0f, 0.0f, -10 }, { 1.0f, 1.0f, 0.0f }, 2.0f);
+	models["firstHand"]->SetTransform({ 1.6f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+	models["secondHand"]->SetTransform({ 1.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, 1.0f }, 1.2f);
+	models["tyre"]->SetTransform({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, 0.2f);
+	models["crate"]->SetTransform({ 0.0f, 0.0f, 0.0f }, { 1.0f, -1.0f, -1.0f }, 0.2f);
 
-	models.push_back(new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
-	models.back()->SetTransform({ 1.6f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f });
-	models.back()->AddParentModel(models.front());
+	models["firstHand"]->AddParentModel(models["sphere"]);
+	models["secondHand"]->AddParentModel(models["sphere"]);
+	models["tyre"]->AddParentModel(models["secondHand"]);
+	models["crate"]->AddParentModel(models["tyre"]);
 
-	models.push_back(new OBJModel("assets/tyre/Tyre.obj", dxdevice, dxdevice_context));
-	models.back()->SetTransform({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0.1f);
-	models.back()->AddParentModel(models.at(models.size() - 2));
-
-	models.push_back(new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
-	models.back()->SetTransform({ 1.6f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f });
-	models.back()->AddParentModel(models.front());
+	models["secondHand"]->SetAngleSpeed(0.5);
+	models["crate"]->SetAngleSpeed(3);
 }
 
 //
@@ -80,28 +88,7 @@ void OurTestScene::Update(
 	float dt,
 	InputHandler* input_handler)
 {
-	float cameraSpeed = input_handler->IsKeyPressed(Keys::Shift) ? camera_vel * 5 : camera_vel;
-
-	//Camera rotation
-	camera->rotate({ -(float)input_handler->GetMouseDeltaY() * dt, -(float)input_handler->GetMouseDeltaX() * dt, 0 });
-	if (input_handler->IsKeyPressed(Keys::Q))
-		camera->rotate({ 0, 0, cameraSpeed * dt * 3.0f });
-	if (input_handler->IsKeyPressed(Keys::E))
-		camera->rotate({ 0, 0, -cameraSpeed * dt * 3.0f });
-
-	if (input_handler->IsKeyPressed(Keys::Tab))
-		camera->SetZeroRoll();
-
-
-	// Basic camera control
-	if (input_handler->IsKeyPressed(Keys::Up) || input_handler->IsKeyPressed(Keys::W))
-		camera->move({ 0.0f, 0.0f, -cameraSpeed * dt });
-	if (input_handler->IsKeyPressed(Keys::Down) || input_handler->IsKeyPressed(Keys::S))
-		camera->move({ 0.0f, 0.0f, cameraSpeed * dt });
-	if (input_handler->IsKeyPressed(Keys::Right) || input_handler->IsKeyPressed(Keys::D))
-		camera->move({ cameraSpeed * dt, 0.0f, 0.0f });
-	if (input_handler->IsKeyPressed(Keys::Left) || input_handler->IsKeyPressed(Keys::A))
-		camera->move({ -cameraSpeed * dt, 0.0f, 0.0f });
+	UpdateCamera(dt, input_handler);
 	
 	// Now set/update object transformations
 	// This can be done using any sequence of transformation matrices,
@@ -139,19 +126,11 @@ void OurTestScene::Update(
 	mPlanet = mStar * mPlanet;
 	mShip = mStar * mShip;
 
-	//TODO fixa
-	//planet->SetAngle(angle);
-	//handSatelite->SetAngle(angle/2);
-	//inverseHandSatelite->SetAngle(angle / 3);
-	//wheelSatelite->SetAngle(angle);
+	for (auto keyValue : models)
+		keyValue.second->SetAngle(angle);
 
-	for (auto model : models) {
-		model->SetAngle(angle);
-		model->UpdateTransform();
-	}
-		
-	//TODO fixa
-
+	for (auto keyValue : models)
+		keyValue.second->UpdateTransform();
 
 	// Increment the rotation angle.
 	angle += angle_vel * dt;
@@ -166,6 +145,30 @@ void OurTestScene::Update(
 	}
 }
 
+void OurTestScene::UpdateCamera(float dt, InputHandler* input_handler) {
+	float cameraSpeed = input_handler->IsKeyPressed(Keys::Shift) ? camera_vel * 5 : camera_vel;
+
+	//Camera rotation
+	camera->rotate({ -(float)input_handler->GetMouseDeltaY() * dt, -(float)input_handler->GetMouseDeltaX() * dt, 0 });
+	if (input_handler->IsKeyPressed(Keys::Q))
+		camera->rotate({ 0, 0, cameraSpeed * dt * 3.0f });
+	if (input_handler->IsKeyPressed(Keys::E))
+		camera->rotate({ 0, 0, -cameraSpeed * dt * 3.0f });
+	if (input_handler->IsKeyPressed(Keys::Tab))
+		camera->SetZeroRoll();
+
+
+	// Basic camera control
+	if (input_handler->IsKeyPressed(Keys::Up) || input_handler->IsKeyPressed(Keys::W))
+		camera->move({ 0.0f, 0.0f, -cameraSpeed * dt });
+	if (input_handler->IsKeyPressed(Keys::Down) || input_handler->IsKeyPressed(Keys::S))
+		camera->move({ 0.0f, 0.0f, cameraSpeed * dt });
+	if (input_handler->IsKeyPressed(Keys::Right) || input_handler->IsKeyPressed(Keys::D))
+		camera->move({ cameraSpeed * dt, 0.0f, 0.0f });
+	if (input_handler->IsKeyPressed(Keys::Left) || input_handler->IsKeyPressed(Keys::A))
+		camera->move({ -cameraSpeed * dt, 0.0f, 0.0f });
+}
+
 //
 // Called every frame, after update
 //
@@ -173,6 +176,9 @@ void OurTestScene::Render()
 {
 	// Bind transformation_buffer to slot b0 of the VS
 	dxdevice_context->VSSetConstantBuffers(0, 1, &transformation_buffer);
+
+	dxdevice_context->PSSetConstantBuffers(0, 1, &lightAndCameraBuffer);
+	UpdateLightAndCameraBuffer(lightSource, camera->get_WorldToViewMatrix());
 
 	// Obtain the matrices needed for rendering from the camera
 	Mview = camera->get_WorldToViewMatrix();
@@ -183,9 +189,9 @@ void OurTestScene::Render()
 	cube->Render();
 
 
-	for (auto model : models) {
-		UpdateTransformationBuffer(model->transform, Mview, Mproj);
-		model->Render();
+	for (auto keyValue : models) {
+		UpdateTransformationBuffer(keyValue.second->transform, Mview, Mproj);
+		keyValue.second->Render();
 	}
 
 	UpdateTransformationBuffer(mStar, Mview, Mproj);
@@ -206,12 +212,12 @@ void OurTestScene::Render()
 
 void OurTestScene::Release()
 {
-	//SAFE_DELETE(quad);
 	SAFE_DELETE(cube);
 	SAFE_DELETE(sponza);
 	SAFE_DELETE(camera);
 
 	SAFE_RELEASE(transformation_buffer);
+	SAFE_RELEASE(lightAndCameraBuffer);
 	// + release other CBuffers
 }
 
@@ -249,4 +255,28 @@ void OurTestScene::UpdateTransformationBuffer(
 	matrix_buffer_->WorldToViewMatrix = WorldToViewMatrix;
 	matrix_buffer_->ProjectionMatrix = ProjectionMatrix;
 	dxdevice_context->Unmap(transformation_buffer, 0);
+}
+
+void OurTestScene::InitLightAndCameraBuffer()
+{
+	lightSource = mat4f::translation({2, 10, 10});
+
+	HRESULT hr;
+	D3D11_BUFFER_DESC MatrixBuffer_desc = { 0 };
+	MatrixBuffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+	MatrixBuffer_desc.ByteWidth = sizeof(LightAndCameraBuffer);
+	MatrixBuffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	MatrixBuffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	MatrixBuffer_desc.MiscFlags = 0;
+	MatrixBuffer_desc.StructureByteStride = 0;
+	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &lightAndCameraBuffer));
+}
+
+void OurTestScene::UpdateLightAndCameraBuffer(const mat4f& LightMatrix, const mat4f& CameraMatrix) {
+	D3D11_MAPPED_SUBRESOURCE resource;
+	dxdevice_context->Map(lightAndCameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	auto matrix_buffer_ = (LightAndCameraBuffer*)resource.pData;
+	matrix_buffer_->LightMatrix = LightMatrix;
+	matrix_buffer_->CameraMatrix = CameraMatrix;
+	dxdevice_context->Unmap(lightAndCameraBuffer, 0);
 }

@@ -60,6 +60,7 @@ public:
 
 	void rotate(const vec3f& newRotation) {
 		this->rotation += newRotation * rotationSpeed;
+		rotation.x = clamp(rotation.x, -PI / 2, PI / 2);
 	}
 
 	void SetZeroRoll() {

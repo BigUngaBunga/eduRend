@@ -10,6 +10,8 @@
 #include "Cube.h"
 #include "Texture.h"
 
+
+#include <map>
 // New files
 // Material
 // Texture <- stb
@@ -57,7 +59,7 @@ class OurTestScene : public Scene
 	// CBuffer for transformation matrices
 	ID3D11Buffer* transformation_buffer = nullptr;
 	// + other CBuffers
-
+	ID3D11Buffer* lightAndCameraBuffer = nullptr;
 	// 
 	// CBuffer client-side definitions
 	// These must match the corresponding shader definitions 
@@ -70,12 +72,22 @@ class OurTestScene : public Scene
 		mat4f ProjectionMatrix;
 	};
 
+	struct LightAndCameraBuffer
+	{
+		mat4f LightMatrix;
+		mat4f CameraMatrix;
+	};
+
+	struct PhongBuffer
+	{
+		//TODO fill with data
+	};
+
 	//
 	// Scene content
 	//
 	Camera* camera;
 
-	//QuadModel* quad;
 	Cube* cube;
 	OBJModel* sponza;
 
@@ -84,8 +96,7 @@ class OurTestScene : public Scene
 	OBJModel* inverseHandSatelite;
 	OBJModel* wheelSatelite;
 
-	std::vector<OBJModel*> models = std::vector<OBJModel*>();
-	//std::unordered_map<std::string, OBJModel*> models = std::unordered_map<std::string, OBJModel*>();
+	std::map<std::string, OBJModel*> models = std::map<std::string, OBJModel*>();
 
 	OBJModel* star;
 	Cube* smallPlanet;
@@ -96,6 +107,8 @@ class OurTestScene : public Scene
 	mat4f mPlanet;
 	mat4f mMoon;
 	mat4f mShip;
+
+	mat4f lightSource;
 
 
 	// Model-to-world transformation matrices
@@ -120,6 +133,9 @@ class OurTestScene : public Scene
 		mat4f WorldToViewMatrix,
 		mat4f ProjectionMatrix);
 
+	void InitLightAndCameraBuffer();
+	void UpdateLightAndCameraBuffer(const mat4f& LightMatrix, const mat4f& CameraMatrix);
+
 public:
 	OurTestScene(
 		ID3D11Device* dxdevice,
@@ -129,9 +145,8 @@ public:
 
 	void Init() override;
 
-	void Update(
-		float dt,
-		InputHandler* input_handler) override;
+	void Update(float dt, InputHandler* input_handler) override;
+	void UpdateCamera(float dt, InputHandler* input_handler);
 
 	void Render() override;
 
