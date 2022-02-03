@@ -84,7 +84,6 @@ private:
 	std::vector<IndexRange> index_ranges;
 	std::vector<Material> materials;
 
-
 	vec3f translation = { 0, 0, 0 };
 	vec3f rotation = { 0, 0, 0 };
 	vec3f scale = { 1, 1, 1 };

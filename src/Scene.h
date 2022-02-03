@@ -74,8 +74,8 @@ class OurTestScene : public Scene
 
 	struct LightAndCameraBuffer
 	{
-		mat4f LightMatrix;
-		mat4f CameraMatrix;
+		vec4f LightPosition;
+		vec4f CameraPosition;
 	};
 
 	struct PhongBuffer
@@ -108,7 +108,7 @@ class OurTestScene : public Scene
 	mat4f mMoon;
 	mat4f mShip;
 
-	mat4f lightSource;
+	vec4f lightSource;
 
 
 	// Model-to-world transformation matrices
@@ -134,7 +134,9 @@ class OurTestScene : public Scene
 		mat4f ProjectionMatrix);
 
 	void InitLightAndCameraBuffer();
-	void UpdateLightAndCameraBuffer(const mat4f& LightMatrix, const mat4f& CameraMatrix);
+	void UpdateLightAndCameraBuffer(const vec4f& LightMatrix, const vec4f& CameraMatrix);
+
+	void InitiateModels();
 
 public:
 	OurTestScene(

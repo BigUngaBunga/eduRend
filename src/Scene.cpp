@@ -38,18 +38,7 @@ OurTestScene::OurTestScene(
 //
 // Called once at initialization
 //
-void OurTestScene::Init()
-{
-	camera = new Camera(
-		45.0f * fTO_RAD,		// field-of-view (radians)
-		(float)window_width / window_height,	// aspect ratio
-		1.0f,					// z-near plane (everything closer will be clipped/removed)
-		500.0f);				// z-far plane (everything further will be clipped/removed)
-
-	// Move camera to (0,0,5)
-	camera->moveTo({ 0, 0, 5 });
-
-	// Create objects
+void OurTestScene::InitiateModels() {
 	cube = new Cube(dxdevice, dxdevice_context, 1.337f);
 	sponza = new OBJModel("assets/crytek-sponza/sponza.obj", dxdevice, dxdevice_context);
 
@@ -65,9 +54,9 @@ void OurTestScene::Init()
 	models.emplace("tyre", new OBJModel("assets/tyre/Tyre.obj", dxdevice, dxdevice_context));
 	models.emplace("crate", new OBJModel("assets/WoodenCrate/WoodenCrate.obj", dxdevice, dxdevice_context));
 
-	models["sphere"]->SetTransform({ 0.0f, 0.0f, -10 }, { 1.0f, 1.0f, 0.0f }, 1.5f);
+	models["sphere"]->SetTransform({ -7.0f, 0.0f, -10 }, { 1.0f, 1.0f, 0.0f }, 1.5f);
 	models["firstHand"]->SetTransform({ 1.6f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
-	models["secondHand"]->SetTransform({ 1.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, 1.0f }, 1.2f);
+	models["secondHand"]->SetTransform({ 1.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, 1.0f }, 1.7f);
 	models["tyre"]->SetTransform({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, 0.2f);
 	models["crate"]->SetTransform({ 0.0f, 0.0f, 0.0f }, { 1.0f, -1.0f, -1.0f }, 0.2f);
 
@@ -80,13 +69,25 @@ void OurTestScene::Init()
 	models["crate"]->SetAngleSpeed(5);
 }
 
+void OurTestScene::Init()
+{
+	camera = new Camera(
+		45.0f * fTO_RAD,		// field-of-view (radians)
+		(float)window_width / window_height,	// aspect ratio
+		1.0f,					// z-near plane (everything closer will be clipped/removed)
+		500.0f);				// z-far plane (everything further will be clipped/removed)
+
+	// Move camera to (0,0,5)
+	camera->moveTo({ 0, 0, 15 });
+
+	InitiateModels();
+}
+
 //
 // Called every frame
 // dt (seconds) is time elapsed since the previous frame
 //
-void OurTestScene::Update(
-	float dt,
-	InputHandler* input_handler)
+void OurTestScene::Update(float dt, InputHandler* input_handler)
 {
 	UpdateCamera(dt, input_handler);
 	
@@ -178,7 +179,7 @@ void OurTestScene::Render()
 	dxdevice_context->VSSetConstantBuffers(0, 1, &transformation_buffer);
 
 	dxdevice_context->PSSetConstantBuffers(0, 1, &lightAndCameraBuffer);
-	UpdateLightAndCameraBuffer(lightSource, camera->get_WorldToViewMatrix());
+	UpdateLightAndCameraBuffer(lightSource, camera->GetWorldPosition()); //TODO byt ut mot position i kamerarummet
 
 	// Obtain the matrices needed for rendering from the camera
 	Mview = camera->get_WorldToViewMatrix();
@@ -189,7 +190,7 @@ void OurTestScene::Render()
 	cube->Render();
 
 
-	for (auto keyValue : models) {
+	for (const auto& keyValue : models) {
 		UpdateTransformationBuffer(keyValue.second->transform, Mview, Mproj);
 		keyValue.second->Render();
 	}
@@ -215,6 +216,8 @@ void OurTestScene::Release()
 	SAFE_DELETE(cube);
 	SAFE_DELETE(sponza);
 	SAFE_DELETE(camera);
+	for (auto modelPointer : models)
+		SAFE_DELETE(modelPointer.second);
 
 	SAFE_RELEASE(transformation_buffer);
 	SAFE_RELEASE(lightAndCameraBuffer);
@@ -259,7 +262,7 @@ void OurTestScene::UpdateTransformationBuffer(
 
 void OurTestScene::InitLightAndCameraBuffer()
 {
-	lightSource = mat4f::translation({2, 10, 10});
+	lightSource = { 0, 5, 3, 0 };
 
 	HRESULT hr;
 	D3D11_BUFFER_DESC MatrixBuffer_desc = { 0 };
@@ -272,11 +275,11 @@ void OurTestScene::InitLightAndCameraBuffer()
 	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &lightAndCameraBuffer));
 }
 
-void OurTestScene::UpdateLightAndCameraBuffer(const mat4f& LightMatrix, const mat4f& CameraMatrix) {
+void OurTestScene::UpdateLightAndCameraBuffer(const vec4f& LightPosition, const vec4f& CameraPosition) {
 	D3D11_MAPPED_SUBRESOURCE resource;
 	dxdevice_context->Map(lightAndCameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 	auto matrix_buffer_ = (LightAndCameraBuffer*)resource.pData;
-	matrix_buffer_->LightMatrix = LightMatrix;
-	matrix_buffer_->CameraMatrix = CameraMatrix;
+	matrix_buffer_->LightPosition = LightPosition;
+	matrix_buffer_->CameraPosition = CameraPosition;
 	dxdevice_context->Unmap(lightAndCameraBuffer, 0);
 }

@@ -73,7 +73,7 @@ public:
 
 	// Return World-to-View matrix for this camera
 	//
-	mat4f get_WorldToViewMatrix()
+	mat4f get_WorldToViewMatrix() const
 	{
 		// Assuming a camera's position and rotation is defined by matrices T(p) and R,
 		// the View-to-World transform is T(p)*R (for a first-person style camera).
@@ -92,9 +92,17 @@ public:
 	// In a performance sensitive situation this matrix should be precomputed
 	// if possible
 	//
-	mat4f get_ProjectionMatrix()
+	mat4f get_ProjectionMatrix() const
 	{
 		return mat4f::projection(vfov, aspect, zNear, zFar);
+	}
+
+	vec4f GetWorldPosition() const {
+		return vec4f::vec4(-position, 0.0f);
+	}
+
+	vec4f GetPosition() const {
+		return vec4f::vec4(position, 0.0f);
 	}
 };
 
