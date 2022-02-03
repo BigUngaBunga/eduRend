@@ -67,7 +67,7 @@ public:
 
 	virtual void Render() const;
 
-	~QuadModel() { }
+	~QuadModel() = default;
 };
 
 class OBJModel : public Model
@@ -80,7 +80,7 @@ class OBJModel : public Model
 		unsigned ofs;
 		int mtl_index;
 	};
-
+private:
 	std::vector<IndexRange> index_ranges;
 	std::vector<Material> materials;
 
@@ -97,7 +97,6 @@ class OBJModel : public Model
 	}
 
 public:
-	bool calculateRotationFirst = false;
 	mat4f transform;
 	std::vector<OBJModel*> parents = std::vector<OBJModel*>();
 
@@ -110,14 +109,15 @@ public:
 
 private:
 	mat4f GetBaseTransform() const;
+	mat4f GetUnscaledTransform() const;
 	void SetTranslation(const vec3f& newTranslation);
 	void SetRotation(const vec3f& newRotation);
 	void SetScale(const vec3f& newScale);
 	void SetScale(const float& newScale);
-	void SetRotationCalculation(bool calculateFirst) { calculateRotationFirst = calculateFirst; }
 public:
 	void AddParentModel(OBJModel* parent);
 	void UpdateTransform();
+	void UpdateUnscaledTransform();
 	void SetAngle(const float& newAngle);
 	void SetAngleSpeed(const float& newAngleSpeed);
 	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale);

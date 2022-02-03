@@ -80,7 +80,7 @@ QuadModel::QuadModel(
 void QuadModel::Render() const
 {
 	// Bind our vertex buffer
-	const UINT32 stride = sizeof(Vertex); //  sizeof(float) * 8;
+	const UINT32 stride = sizeof(Vertex);
 	const UINT32 offset = 0;
 	dxdevice_context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride, &offset);
 
@@ -211,8 +211,16 @@ void OBJModel::Render() const
 void OBJModel::UpdateTransform() {
 	transform = mat4f_identity;
 
-	for (auto iterator = parents.begin(); iterator != parents.end(); ++iterator)
-		transform = transform * (*iterator)->GetBaseTransform();
+	for(auto parent : parents)
+		transform = transform * parent->GetBaseTransform();
+	transform = transform * GetBaseTransform();
+}
+
+void OBJModel::UpdateUnscaledTransform() {
+	transform = mat4f_identity;
+
+	for (auto parent : parents)
+		transform = transform * parent->GetUnscaledTransform();
 	transform = transform * GetBaseTransform();
 }
 
@@ -226,10 +234,13 @@ void OBJModel::AddParentModel(OBJModel* parent) {
 mat4f OBJModel::GetBaseTransform() const {
 	if(rotation == vec3f_zero)
 		return  mat4f::translation(translation) * mat4f::scaling(scale);
-	
-	if (calculateRotationFirst)
-		return mat4f::rotation(angle, rotation) * mat4f::translation(translation) * mat4f::scaling(scale);
 	return mat4f::translation(translation) * mat4f::rotation(angle, rotation) * mat4f::scaling(scale);
+}
+
+mat4f OBJModel::GetUnscaledTransform() const {
+	if (rotation == vec3f_zero)
+		return  mat4f::translation(translation);
+	return mat4f::translation(translation) * mat4f::rotation(angle, rotation);
 }
 
 void OBJModel::SetTranslation(const vec3f& newTranslation) { translation = newTranslation; }

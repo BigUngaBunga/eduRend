@@ -65,7 +65,7 @@ void OurTestScene::Init()
 	models.emplace("tyre", new OBJModel("assets/tyre/Tyre.obj", dxdevice, dxdevice_context));
 	models.emplace("crate", new OBJModel("assets/WoodenCrate/WoodenCrate.obj", dxdevice, dxdevice_context));
 
-	models["sphere"]->SetTransform({ 0.0f, 0.0f, -10 }, { 1.0f, 1.0f, 0.0f }, 2.0f);
+	models["sphere"]->SetTransform({ 0.0f, 0.0f, -10 }, { 1.0f, 1.0f, 0.0f }, 1.5f);
 	models["firstHand"]->SetTransform({ 1.6f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 	models["secondHand"]->SetTransform({ 1.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, 1.0f }, 1.2f);
 	models["tyre"]->SetTransform({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, 0.2f);
@@ -77,7 +77,7 @@ void OurTestScene::Init()
 	models["crate"]->AddParentModel(models["tyre"]);
 
 	models["secondHand"]->SetAngleSpeed(0.5);
-	models["crate"]->SetAngleSpeed(3);
+	models["crate"]->SetAngleSpeed(5);
 }
 
 //
@@ -97,7 +97,7 @@ void OurTestScene::Update(
 	// via e.g. Mquad = linalg::mat4f_identity; 
 
 	// Quad model-to-world transformation
-	Mquad = mat4f::translation(2, 0, 0) *			// No translation
+	Mquad = mat4f::translation(3, 0, 0) *			// No translation
 		mat4f::rotation(-angle, 0.0f, 1.0f, 0.0f) *	// Rotate continuously around the y-axis
 		mat4f::scaling(1.5, 1.5, 1.5);				// Scale uniformly to 150%
 
@@ -119,8 +119,8 @@ void OurTestScene::Update(
 		mat4f::scaling(0.5, 0.5, 0.5);
 
 	mShip = mat4f::rotation(angle , 1.0f, 0.0f, 0.0f) *
-		mat4f::translation(0, 2, 0) *
-		mat4f::scaling(0.2f);
+		mat4f::translation(0, 1, 0) *
+		mat4f::scaling(0.4f);
 
 	mMoon = mStar * mPlanet * mMoon;
 	mPlanet = mStar * mPlanet;

@@ -10,8 +10,6 @@ Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const 
 
 	std::array<std::array<vec3f, 4>, 2> cubeCorners = { vec3f{point, point, point}, vec3f{-point, point, point}, vec3f{point, point, -point}, vec3f{-point, point, -point},
 					 vec3f{point, -point, point}, vec3f{-point, -point, point}, vec3f{point, -point, -point}, vec3f{-point, -point, -point} };
-
-	std:cout << "Size of dimension 1: " << cubeCorners.size() << ". Size of dimension 2: " << cubeCorners[0].size() <<".";
 	int cornerCounter = 0;
 	for (size_t i = 0; i < cubeNormals.size(); i++)
 	{
@@ -34,8 +32,6 @@ Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const 
 }
 
 void Cube::InitializeRender() {
-
-	//TODO fatta vad det är som händer
 	// Vertex array descriptor
 	D3D11_BUFFER_DESC vbufferDesc = { 0 };
 	vbufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -116,7 +112,7 @@ void Cube::AddASquare() {
 void Cube::Render() const
 {
 	// Bind our vertex buffer
-	const UINT32 stride = sizeof(Vertex); //  sizeof(float) * 8;
+	const UINT32 stride = sizeof(Vertex);
 	const UINT32 offset = 0;
 	dxdevice_context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride, &offset);
 
