@@ -60,6 +60,7 @@ class OurTestScene : public Scene
 	ID3D11Buffer* transformation_buffer = nullptr;
 	// + other CBuffers
 	ID3D11Buffer* lightAndCameraBuffer = nullptr;
+	ID3D11Buffer* sceneMaterialBuffer = nullptr;
 	// 
 	// CBuffer client-side definitions
 	// These must match the corresponding shader definitions 
@@ -70,6 +71,7 @@ class OurTestScene : public Scene
 		mat4f ModelToWorldMatrix;
 		mat4f WorldToViewMatrix;
 		mat4f ProjectionMatrix;
+		vec4f WorldPosition;
 	};
 
 	struct LightAndCameraBuffer
@@ -78,42 +80,22 @@ class OurTestScene : public Scene
 		vec4f CameraPosition;
 	};
 
-	struct PhongBuffer
-	{
-		//TODO fill with data
+	struct PhongMaterial {
+		vec4f kA;
+		vec4f kD;
+		vec4f kS;
 	};
 
 	//
 	// Scene content
 	//
 	Camera* camera;
-
-	Cube* cube;
 	OBJModel* sponza;
 
-	OBJModel* planet;
-	OBJModel* handSatelite;
-	OBJModel* inverseHandSatelite;
-	OBJModel* wheelSatelite;
-
-	std::map<std::string, OBJModel*> models = std::map<std::string, OBJModel*>();
-
-	OBJModel* star;
-	Cube* smallPlanet;
-	OBJModel* moon;
-	OBJModel* ship;
-
-	mat4f mStar;
-	mat4f mPlanet;
-	mat4f mMoon;
-	mat4f mShip;
-
-	vec4f lightSource;
-
+	std::map<std::string, Model*> models = std::map<std::string, Model*>();
 
 	// Model-to-world transformation matrices
 	mat4f Msponza;
-	mat4f Mquad;
 
 	// World-to-view matrix
 	mat4f Mview;
@@ -123,7 +105,7 @@ class OurTestScene : public Scene
 	// Misc
 	float angle = 0;			// A per-frame updated rotation angle (radians)...
 	float angle_vel = fPI / 2;	// ...and its velocity (radians/sec)
-	float camera_vel = 5.0f;	// Camera movement velocity in units/s
+	float camera_vel = 10.0f;	// Camera movement velocity in units/s
 	float fps_cooldown = 0;
 
 	void InitTransformationBuffer();
@@ -135,6 +117,9 @@ class OurTestScene : public Scene
 
 	void InitLightAndCameraBuffer();
 	void UpdateLightAndCameraBuffer(const vec4f& LightMatrix, const vec4f& CameraMatrix);
+
+	void InitMaterialBuffer();
+	void UpdateMaterialBuffer(const Material& material);
 
 	void InitiateModels();
 

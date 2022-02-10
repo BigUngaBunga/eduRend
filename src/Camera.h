@@ -88,6 +88,8 @@ public:
 		return rotationMatrix * mat4f::translation(-position);
 	}
 
+	mat4f get_ViewToWorldMatrix() const {return mat4f::translation(position) * GetRotation();}
+
 	// Matrix transforming from View space to Clip space
 	// In a performance sensitive situation this matrix should be precomputed
 	// if possible
@@ -98,11 +100,13 @@ public:
 	}
 
 	vec4f GetWorldPosition() const {
-		return vec4f::vec4(-position, 0.0f);
+		mat4f transform = get_ViewToWorldMatrix();
+		return vec4f(transform.m14, transform.m24, transform.m34, transform.m44);
 	}
 
 	vec4f GetPosition() const {
-		return vec4f::vec4(position, 0.0f);
+		mat4f transform = get_WorldToViewMatrix();
+		return vec4f(transform.m14, transform.m24, transform.m34, transform.m44);
 	}
 };
 

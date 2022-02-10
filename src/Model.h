@@ -20,9 +20,27 @@
 
 using namespace linalg;
 
+
 class Model
 {
+private:
+	enum RotationState
+	{
+		Normal, First, Twice
+	};
+
+	vec3f translation = { 0, 0, 0 };
+	vec3f rotation = { 0, 0, 0 };
+	vec3f secondRotation = { 0, 0, 0 };
+	vec3f scale = { 1, 1, 1 };
+	float angle = 0.0f;
+	float angleSpeed = 1.0f;
+	RotationState rotationState;
+	Material material;
+
+
 protected:
+	
 	// Pointers to the current device and device context
 	ID3D11Device* const			dxdevice;
 	ID3D11DeviceContext* const	dxdevice_context;
@@ -31,7 +49,29 @@ protected:
 	ID3D11Buffer* vertex_buffer = nullptr;
 	ID3D11Buffer* index_buffer = nullptr;
 
+	mat4f GetBaseTransform() const;
+	void SetScale(const vec3f& newScale);
+	void SetScale(const float& newScale);
+
 public:
+
+	mat4f transform;
+	std::vector<Model*> parents = std::vector<Model*>();
+
+	void AddParentModel(Model* parent);
+	void UpdateTransform();
+	void UpdateUnscaledTransform();
+	void SetRotateState(bool rotateFirst, bool rotateNormal);
+	void SetAngle(const float& newAngle);
+	void SetAngleSpeed(const float& newAngleSpeed);
+	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale);
+	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale = 1);
+	void SetRotation(const vec3f& newRotation, bool setSecondRotation = false);
+
+	void SetTranslation(const vec3f& newTranslation);
+	const Material& GetMaterial() const;
+	vec4f GetTranslation() const;
+	mat4f* GetTransform();
 
 	Model(
 		ID3D11Device* dxdevice, 
@@ -84,20 +124,13 @@ private:
 	std::vector<IndexRange> index_ranges;
 	std::vector<Material> materials;
 
-	vec3f translation = { 0, 0, 0 };
-	vec3f rotation = { 0, 0, 0 };
-	vec3f scale = { 1, 1, 1 };
-	float angle = 0.0f;
-	float angleSpeed = 1.0f;
-
 	void append_materials(const std::vector<Material>& mtl_vec)
 	{
 		materials.insert(materials.end(), mtl_vec.begin(), mtl_vec.end());
 	}
 
 public:
-	mat4f transform;
-	std::vector<OBJModel*> parents = std::vector<OBJModel*>();
+
 
 	OBJModel(
 		const std::string& objfile,
@@ -106,23 +139,7 @@ public:
 
 	virtual void Render() const;
 
-private:
-	mat4f GetBaseTransform() const;
-	mat4f GetUnscaledTransform() const;
-	void SetTranslation(const vec3f& newTranslation);
-	void SetRotation(const vec3f& newRotation);
-	void SetScale(const vec3f& newScale);
-	void SetScale(const float& newScale);
-public:
-	void AddParentModel(OBJModel* parent);
-	void UpdateTransform();
-	void UpdateUnscaledTransform();
-	void SetAngle(const float& newAngle);
-	void SetAngleSpeed(const float& newAngleSpeed);
-	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale);
-	void SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale = 1);
-
-	mat4f* GetTransform();
+	const std::vector<Material>& GetMaterials() const;
 
 	~OBJModel();
 };

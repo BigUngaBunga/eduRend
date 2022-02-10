@@ -32,6 +32,7 @@ OurTestScene::OurTestScene(
 { 
 	InitTransformationBuffer();
 	InitLightAndCameraBuffer();
+	InitMaterialBuffer();
 	// + init other CBuffers
 }
 
@@ -39,15 +40,30 @@ OurTestScene::OurTestScene(
 // Called once at initialization
 //
 void OurTestScene::InitiateModels() {
-	cube = new Cube(dxdevice, dxdevice_context, 1.337f);
 	sponza = new OBJModel("assets/crytek-sponza/sponza.obj", dxdevice, dxdevice_context);
 
-	star = new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context);
-	smallPlanet = new Cube(dxdevice, dxdevice_context, 3);
-	moon = new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context);
+	models.emplace("star", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
+	models.emplace("smallPlanet", new Cube(dxdevice, dxdevice_context, 3));
+	models.emplace("moon", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
+	models.emplace("longship", new OBJModel("assets/longship/longship.obj", dxdevice, dxdevice_context));
 
-	ship = new OBJModel("assets/longship/longship.obj", dxdevice, dxdevice_context);
+	models["smallPlanet"]->AddParentModel(models["star"]);
+	models["moon"]->AddParentModel(models["smallPlanet"]);
+	models["longship"]->AddParentModel(models["star"]);
 
+	models["star"]->SetTransform({ 0, 3, 0 }, { 0, 0, 0 }, 1.5);
+	models["smallPlanet"]->SetTransform({ 5, 0, 0 }, { 0.4f, 0.2f, -0.5f }, 0.5);
+	models["smallPlanet"]->SetRotation({ 0, 1, 0 }, true);
+	models["moon"]->SetTransform({ 3, 0, 0 }, { 0, 1, 0 }, 0.5);
+	models["longship"]->SetTransform({ 0, 1, 0 }, { 0, 0, 0 }, 0.4f);
+
+	models["smallPlanet"]->SetRotateState(true, true);
+	models["moon"]->SetRotateState(true, false);
+	models["longship"]->SetRotateState(true, false);
+
+	models["smallPlanet"]->SetAngleSpeed(0.4f);
+
+	models.emplace("light", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
 	models.emplace("sphere", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
 	models.emplace("firstHand", new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
 	models.emplace("secondHand", new OBJModel("assets/hand/hand.obj", dxdevice, dxdevice_context));
@@ -97,41 +113,19 @@ void OurTestScene::Update(float dt, InputHandler* input_handler)
 	// If no transformation is desired, an identity matrix can be obtained 
 	// via e.g. Mquad = linalg::mat4f_identity; 
 
-	// Quad model-to-world transformation
-	Mquad = mat4f::translation(3, 0, 0) *			// No translation
-		mat4f::rotation(-angle, 0.0f, 1.0f, 0.0f) *	// Rotate continuously around the y-axis
-		mat4f::scaling(1.5, 1.5, 1.5);				// Scale uniformly to 150%
-
 	// Sponza model-to-world transformation
 	Msponza = mat4f::translation(0, -5, 0) *		 // Move down 5 units
 		mat4f::rotation(fPI / 2, 0.0f, 1.0f, 0.0f) * // Rotate pi/2 radians (90 degrees) around y
 		mat4f::scaling(0.05f);						 // The scene is quite large so scale it down to 5%
-
-	mStar = mat4f::translation(0, 3, 0) *			
-		mat4f::scaling(1.5, 1.5, 1.5);
-
-	mPlanet = mat4f::rotation(-angle, 0.0f, 1.0f, 0.0f) *
-		mat4f::translation(5, 0, 0) *
-		mat4f::rotation(cos(angle) - sin(angle), 0.3f, 0.1f) *
-		mat4f::scaling(0.5, 0.5, 0.5);
-
-	mMoon = mat4f::rotation(angle * 2, 0.0f, 1.0f, 0.0f) *
-		mat4f::translation(3, 0, 0) *
-		mat4f::scaling(0.5, 0.5, 0.5);
-
-	mShip = mat4f::rotation(angle , 1.0f, 0.0f, 0.0f) *
-		mat4f::translation(0, 1, 0) *
-		mat4f::scaling(0.4f);
-
-	mMoon = mStar * mPlanet * mMoon;
-	mPlanet = mStar * mPlanet;
-	mShip = mStar * mShip;
 
 	for (auto keyValue : models)
 		keyValue.second->SetAngle(angle);
 
 	for (auto keyValue : models)
 		keyValue.second->UpdateTransform();
+
+	models["light"]->SetTranslation({ 20 , 10, 20});
+	//models["light"]->SetTranslation({ 20 * sin(angle / 10), 10, 20 * cos(angle / 10) });
 
 	// Increment the rotation angle.
 	angle += angle_vel * dt;
@@ -177,43 +171,48 @@ void OurTestScene::Render()
 {
 	// Bind transformation_buffer to slot b0 of the VS
 	dxdevice_context->VSSetConstantBuffers(0, 1, &transformation_buffer);
-
 	dxdevice_context->PSSetConstantBuffers(0, 1, &lightAndCameraBuffer);
-	UpdateLightAndCameraBuffer(lightSource, camera->GetWorldPosition()); //TODO byt ut mot position i kamerarummet
+	dxdevice_context->PSSetConstantBuffers(1, 1, &sceneMaterialBuffer);
+
+	vec4f lightPosition;
+	lightPosition = { models["light"]->GetTransform()->m14, models["light"]->GetTransform()->m24, models["light"]->GetTransform()->m34, 1 };
+	UpdateLightAndCameraBuffer(lightPosition, camera->GetWorldPosition());
 
 	// Obtain the matrices needed for rendering from the camera
 	Mview = camera->get_WorldToViewMatrix();
 	Mproj = camera->get_ProjectionMatrix();
 
-	// Load matrices + the Quad's transformation to the device and render it
-	UpdateTransformationBuffer(Mquad, Mview, Mproj);
-	cube->Render();
-
 
 	for (const auto& keyValue : models) {
-		UpdateTransformationBuffer(keyValue.second->transform, Mview, Mproj);
-		keyValue.second->Render();
+		if (auto model = dynamic_cast<OBJModel*>(keyValue.second)) {
+			for (auto const &material : model->GetMaterials()) {
+				UpdateTransformationBuffer(model->transform, Mview, Mproj);
+				UpdateMaterialBuffer(material);
+				keyValue.second->Render();
+			}
+		}
+		else if(keyValue.second != nullptr) {
+			UpdateTransformationBuffer(keyValue.second->transform, Mview, Mproj);
+			UpdateMaterialBuffer(keyValue.second->GetMaterial());
+			keyValue.second->Render();
+		}
 	}
 
-	UpdateTransformationBuffer(mStar, Mview, Mproj);
-	star->Render();
-	UpdateTransformationBuffer(mPlanet, Mview, Mproj);
-	smallPlanet->Render();
-	UpdateTransformationBuffer(mMoon, Mview, Mproj);
-	moon->Render();
-	UpdateTransformationBuffer(mShip, Mview, Mproj);
-	ship->Render();
-
-
+	
 
 	// Load matrices + Sponza's transformation to the device and render it
-	UpdateTransformationBuffer(Msponza, Mview, Mproj);
-	sponza->Render();
+	//UpdateTransformationBuffer(Msponza, Mview, Mproj);
+	//sponza->Render();
+
+	for (auto const& material : sponza->GetMaterials()) {
+		UpdateTransformationBuffer(Msponza, Mview, Mproj);
+		UpdateMaterialBuffer(material);
+		sponza->Render();
+	}
 }
 
 void OurTestScene::Release()
 {
-	SAFE_DELETE(cube);
 	SAFE_DELETE(sponza);
 	SAFE_DELETE(camera);
 	for (auto modelPointer : models)
@@ -221,6 +220,7 @@ void OurTestScene::Release()
 
 	SAFE_RELEASE(transformation_buffer);
 	SAFE_RELEASE(lightAndCameraBuffer);
+	SAFE_RELEASE(sceneMaterialBuffer);
 	// + release other CBuffers
 }
 
@@ -262,8 +262,6 @@ void OurTestScene::UpdateTransformationBuffer(
 
 void OurTestScene::InitLightAndCameraBuffer()
 {
-	lightSource = { 0, 5, 3, 0 };
-
 	HRESULT hr;
 	D3D11_BUFFER_DESC MatrixBuffer_desc = { 0 };
 	MatrixBuffer_desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -279,7 +277,34 @@ void OurTestScene::UpdateLightAndCameraBuffer(const vec4f& LightPosition, const 
 	D3D11_MAPPED_SUBRESOURCE resource;
 	dxdevice_context->Map(lightAndCameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 	auto matrix_buffer_ = (LightAndCameraBuffer*)resource.pData;
+
+	//std::cout << LightPosition << std::endl;
+
 	matrix_buffer_->LightPosition = LightPosition;
 	matrix_buffer_->CameraPosition = CameraPosition;
 	dxdevice_context->Unmap(lightAndCameraBuffer, 0);
+}
+
+void OurTestScene::InitMaterialBuffer() {
+	HRESULT hr;
+	D3D11_BUFFER_DESC MatrixBuffer_desc = { 0 };
+	MatrixBuffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+	MatrixBuffer_desc.ByteWidth = sizeof(PhongMaterial);
+	MatrixBuffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	MatrixBuffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	MatrixBuffer_desc.MiscFlags = 0;
+	MatrixBuffer_desc.StructureByteStride = 0;
+
+	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &sceneMaterialBuffer));
+	
+}
+
+void OurTestScene::UpdateMaterialBuffer(const Material& material) {
+	D3D11_MAPPED_SUBRESOURCE resource;
+	dxdevice_context->Map(sceneMaterialBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	auto matrix_buffer_ = (PhongMaterial*)resource.pData;
+	matrix_buffer_->kA = vec4f(material.Ka, 1);
+	matrix_buffer_->kD = vec4f(material.Kd, 1);
+	matrix_buffer_->kS = vec4f(material.Ks, 1);
+	dxdevice_context->Unmap(sceneMaterialBuffer, 0);
 }

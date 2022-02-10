@@ -6,6 +6,102 @@
 
 #include "Model.h"
 
+//Model fuctions
+void Model::UpdateTransform() {
+	transform = mat4f_identity;
+
+	for (auto parent : parents)
+		transform = transform * parent->GetBaseTransform();
+	transform = transform * GetBaseTransform();
+}
+
+void Model::UpdateUnscaledTransform() {
+	transform = mat4f_identity;
+
+	for (auto parent : parents)
+		transform = transform * parent->GetBaseTransform();
+	transform = transform * GetBaseTransform();
+}
+
+void Model::AddParentModel(Model* parent) {
+	for (auto parentModel : parent->parents)
+		parents.push_back(parentModel);
+
+	parents.push_back(parent);
+}
+
+mat4f Model::GetBaseTransform() const {
+	if (rotation == vec3f_zero)
+		return  mat4f::translation(translation) * mat4f::scaling(scale);
+
+	mat4f baseTransform = mat4f_identity;
+	if (rotationState == RotationState::First || rotationState == RotationState::Twice) {
+		if(!(secondRotation == vec3f_zero))
+			baseTransform = baseTransform * mat4f::rotation(angle, secondRotation);
+		else
+			baseTransform = baseTransform * mat4f::rotation(angle, rotation);
+	}
+		
+
+	baseTransform = baseTransform * mat4f::translation(translation);
+	
+	if (rotationState == RotationState::Normal || rotationState == RotationState::Twice)
+		baseTransform = baseTransform * mat4f::rotation(angle, rotation);
+		
+	
+	baseTransform = baseTransform * mat4f::scaling(scale);
+	return baseTransform;
+}
+
+void Model::SetTranslation(const vec3f& newTranslation) { translation = newTranslation; }
+void Model::SetScale(const vec3f& newScale) { scale = newScale; }
+void Model::SetScale(const float& newScale) { scale = { newScale, newScale, newScale }; }
+void Model::SetAngleSpeed(const float& newAngleSpeed) { angleSpeed = newAngleSpeed; }
+void Model::SetRotateState(bool rotateFirst, bool rotateNormal) {
+	if (rotateFirst && rotateNormal) {
+		rotationState = RotationState::Twice;
+		return;
+	}
+	rotationState = rotateFirst ? RotationState::First : RotationState::Normal;
+}
+void Model::SetRotation(const vec3f& newRotation, bool setSecondRotation) {
+	if (setSecondRotation) {
+		secondRotation = newRotation;
+		secondRotation.normalize();
+	}
+	else {
+		rotation = newRotation;
+		rotation.normalize();
+	}
+}
+
+void Model::SetAngle(const float& newAngle) {
+	angle = newAngle * angleSpeed;
+	while (angle > 2 * PI)
+		angle -= 2 * PI;
+	while (angle < -2 * PI)
+		angle += 2 * PI;
+}
+
+void Model::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale) {
+	SetTranslation(newTranslation);
+	SetRotation(newRotation);
+	SetScale(newScale);
+}
+void Model::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale) {
+	SetTranslation(newTranslation);
+	SetRotation(newRotation);
+	SetScale(newScale);
+}
+
+vec4f Model::GetTranslation() const { 
+	std::cout << transform << std::endl;
+	return { translation, 1 }; }
+
+mat4f* Model::GetTransform() { return &transform; }
+const Material& Model::GetMaterial() const { return material; }
+
+
 QuadModel::QuadModel(
 	ID3D11Device* dxdevice,
 	ID3D11DeviceContext* dxdevice_context)
@@ -155,6 +251,12 @@ OBJModel::OBJModel(
 	// Copy materials from mesh
 	append_materials(mesh->materials);
 
+	std::cout << "Number of materials in mesh: " << mesh->materials.size() << std::endl;
+	for (auto const& material : mesh->materials) {
+		std::cout << "Ambient: " << material.Ka << " Diffuse: " << material.Kd << " Specular: " << material.Ks << std::endl;
+	}
+
+
 	// Go through materials and load textures (if any) to device
 	std::cout << "Loading textures..." << std::endl;
 	for (auto& mtl : materials)
@@ -207,73 +309,7 @@ void OBJModel::Render() const
 	}
 }
 
-
-void OBJModel::UpdateTransform() {
-	transform = mat4f_identity;
-
-	for(auto parent : parents)
-		transform = transform * parent->GetBaseTransform();
-	transform = transform * GetBaseTransform();
-}
-
-void OBJModel::UpdateUnscaledTransform() {
-	transform = mat4f_identity;
-
-	for (auto parent : parents)
-		transform = transform * parent->GetUnscaledTransform();
-	transform = transform * GetBaseTransform();
-}
-
-void OBJModel::AddParentModel(OBJModel* parent) {
-	for (auto parentModel : parent->parents)
-		parents.push_back(parentModel);
-
-	parents.push_back(parent);
-}
-
-mat4f OBJModel::GetBaseTransform() const {
-	if(rotation == vec3f_zero)
-		return  mat4f::translation(translation) * mat4f::scaling(scale);
-	return mat4f::translation(translation) * mat4f::rotation(angle, rotation) * mat4f::scaling(scale);
-}
-
-mat4f OBJModel::GetUnscaledTransform() const {
-	if (rotation == vec3f_zero)
-		return  mat4f::translation(translation);
-	return mat4f::translation(translation) * mat4f::rotation(angle, rotation);
-}
-
-void OBJModel::SetTranslation(const vec3f& newTranslation) { translation = newTranslation; }
-void OBJModel::SetScale(const vec3f& newScale) { scale = newScale;}
-void OBJModel::SetScale(const float& newScale) { scale = {newScale, newScale, newScale}; }
-void OBJModel::SetAngleSpeed(const float& newAngleSpeed) { angleSpeed = newAngleSpeed; }
-
-
-void OBJModel::SetRotation(const vec3f& newRotation) { 
-	rotation = newRotation;
-	rotation.normalize();
-}
-
-void OBJModel::SetAngle(const float& newAngle) { 
-	angle = newAngle * angleSpeed; 
-	while (angle > 2 * PI)
-		angle -= 2 * PI;
-	while (angle < -2 * PI)
-		angle += 2 * PI;
-}
-
-void OBJModel::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const vec3f& newScale) {
-	SetTranslation(newTranslation);
-	SetRotation(newRotation);
-	SetScale(newScale);
-}
-void OBJModel::SetTransform(const vec3f& newTranslation, const vec3f& newRotation, const float& newScale) {
-	SetTranslation(newTranslation);
-	SetRotation(newRotation);
-	SetScale(newScale);
-}
-
-mat4f* OBJModel::GetTransform() { return &transform; }
+const std::vector<Material>& OBJModel::GetMaterials() const { return materials; }
 
 OBJModel::~OBJModel()
 {
