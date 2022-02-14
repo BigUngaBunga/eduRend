@@ -99,7 +99,27 @@ vec4f Model::GetTranslation() const {
 	return { translation, 1 }; }
 
 mat4f* Model::GetTransform() { return &transform; }
-const Material& Model::GetMaterial() const { return material; }
+
+
+
+void Model::LoadTexture(Material& material) {
+	HRESULT hr;
+	// Load Diffuse texture
+	//
+	if (material.Kd_texture_filename.size()) {
+
+		hr = LoadTextureFromFile(
+			dxdevice,
+			dxdevice_context,
+			material.Kd_texture_filename.c_str(),
+			&material.diffuse_texture);
+		std::cout << "\t" << material.Kd_texture_filename
+			<< (SUCCEEDED(hr) ? " - OK" : "- FAILED") << std::endl;
+	}
+
+	// + other texture types here - see Material class
+		// ...
+}
 
 
 QuadModel::QuadModel(
@@ -261,22 +281,7 @@ OBJModel::OBJModel(
 	std::cout << "Loading textures..." << std::endl;
 	for (auto& mtl : materials)
 	{
-		HRESULT hr;
-
-		// Load Diffuse texture
-		//
-		if (mtl.Kd_texture_filename.size()) {
-
-			hr = LoadTextureFromFile(
-				dxdevice,
-				mtl.Kd_texture_filename.c_str(), 
-				&mtl.diffuse_texture);
-			std::cout << "\t" << mtl.Kd_texture_filename 
-				<< (SUCCEEDED(hr) ? " - OK" : "- FAILED") << std::endl;
-		}
-
-		// + other texture types here - see Material class
-		// ...
+		LoadTexture(mtl);
 	}
 	std::cout << "Done." << std::endl;
 

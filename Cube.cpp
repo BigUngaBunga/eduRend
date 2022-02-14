@@ -29,6 +29,7 @@ Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const 
 	CreateSquare(cubeNormals[0], cubeCorners[0][0], cubeCorners[0][1], cubeCorners[1][0], cubeCorners[1][1]);
 
 	InitializeRender();
+	LoadTexture(material);
 }
 
 void Cube::InitializeRender() {
@@ -108,6 +109,7 @@ void Cube::AddASquare() {
 	nbr_indices += 4;
 }
 
+const Material& Cube::GetMaterial() const { return material; }
 
 void Cube::Render() const
 {

@@ -211,10 +211,10 @@ void OurTestScene::Render()
 				keyValue.second->Render();
 			}
 		}
-		else if(keyValue.second != nullptr) {
-			UpdateTransformationBuffer(keyValue.second->transform, Mview, Mproj);
-			UpdateMaterialBuffer(keyValue.second->GetMaterial());
-			keyValue.second->Render();
+		else if(auto model = dynamic_cast<Cube*>(keyValue.second)) {
+			UpdateTransformationBuffer(model->transform, Mview, Mproj);
+			UpdateMaterialBuffer(model->GetMaterial());
+			model->Render();
 		}
 	}
 
@@ -324,4 +324,6 @@ void OurTestScene::UpdateMaterialBuffer(const Material& material) {
 	matrix_buffer_->kD = vec4f(material.Kd, 1);
 	matrix_buffer_->kS = vec4f(material.Ks, material.shininess);
 	dxdevice_context->Unmap(sceneMaterialBuffer, 0);
+
+
 }

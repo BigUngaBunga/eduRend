@@ -40,7 +40,7 @@ struct Material
 	std::string name;
 
 	// File paths to textures
-	std::string Kd_texture_filename;
+	std::string Kd_texture_filename = "assets/textures/wood.png";
 	std::string normal_texture_filename;
 	// + more texture types (extend OBJLoader::LoadMaterials if needed)
 

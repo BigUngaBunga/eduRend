@@ -36,7 +36,6 @@ private:
 	float angle = 0.0f;
 	float angleSpeed = 1.0f;
 	RotationState rotationState;
-	Material material;
 
 
 protected:
@@ -52,6 +51,8 @@ protected:
 	mat4f GetBaseTransform() const;
 	void SetScale(const vec3f& newScale);
 	void SetScale(const float& newScale);
+	void LoadTexture(Material& material);
+
 
 public:
 
@@ -69,7 +70,6 @@ public:
 	void SetRotation(const vec3f& newRotation, bool setSecondRotation = false);
 
 	void SetTranslation(const vec3f& newTranslation);
-	const Material& GetMaterial() const;
 	vec4f GetTranslation() const;
 	mat4f* GetTransform();
 
