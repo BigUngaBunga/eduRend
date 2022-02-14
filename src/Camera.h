@@ -30,6 +30,7 @@ public:
 						
 	vec3f position;
 	vec3f rotation;
+	vec3f scale;
 	float rotationSpeed;
 
 	Camera(
@@ -39,8 +40,9 @@ public:
 		float zFar):
 		vfov(vfov), aspect(aspect), zNear(zNear), zFar(zFar)
 	{
-		position = {0.0f, 0.0f, 0.0f};
-		rotation = { 0.0f, 0.0f, 0.0f };
+		position = vec3f_zero;
+		rotation = vec3f_zero;
+		scale = { 1, 1, 1 };
 		rotationSpeed = 0.069f;
 	}
 
@@ -67,6 +69,10 @@ public:
 		rotation.z = 0;
 	}
 
+	void Scale(const vec3f& newScale) { scale += newScale; }
+
+	void ResetScale() { scale = {1, 1, 1}; }
+
 	mat4f GetRotation() const {
 		return mat4f::rotation(rotation.z, rotation.y, rotation.x);
 	}
@@ -85,10 +91,10 @@ public:
 		mat4f rotationMatrix = GetRotation();
 		rotationMatrix.transpose();
 
-		return rotationMatrix * mat4f::translation(-position);
+		return rotationMatrix * mat4f::translation(-position) * mat4f::scaling(1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z);
 	}
 
-	mat4f get_ViewToWorldMatrix() const {return mat4f::translation(position) * GetRotation();}
+	mat4f get_ViewToWorldMatrix() const {return mat4f::translation(position) * GetRotation() * mat4f::scaling(scale);}
 
 	// Matrix transforming from View space to Clip space
 	// In a performance sensitive situation this matrix should be precomputed

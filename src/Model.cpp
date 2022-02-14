@@ -311,6 +311,15 @@ void OBJModel::Render() const
 
 const std::vector<Material>& OBJModel::GetMaterials() const { return materials; }
 
+void OBJModel::UpdateSpecular(const vec3f& newDiffuseColour, const vec3f& newSpecularColour) {
+	for (Material material : materials) {
+		material.Kd = newDiffuseColour;
+		material.Ks = newSpecularColour;
+		std::cout << "Ambient: " << material.Ka << " Diffuse: " << material.Kd << " Specular: " << material.Ks << std::endl;
+	}
+		
+}
+
 OBJModel::~OBJModel()
 {
 	for (auto& material : materials)

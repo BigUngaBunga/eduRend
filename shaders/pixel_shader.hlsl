@@ -32,32 +32,45 @@ float4 PS_main(PSIn input) : SV_Target
 	bool debugTextureCoordinates = false;
 	bool debugNormals = false;
 	
-	float shininess = 4;
+    bool includeAmbient = true;
+    bool includeDiffuse = true;
+    bool includeSpecular = true;
+	
 	float3 ambientColour = kA.xyz;
 	float3 difuseColour = kD.xyz;
 	float3 specularColour = kS.xyz;
-	float4 outputColour;
+    float shininess = kS.w;
+    float4 outputColour = float4(0, 0, 0, 1);
 	
 	//TODO kolla på hur vektorerna går, då ljuset reflekteras på motsatta sida också, där lambert blir mörk.
 
 	//En ljuspunkt
-	float4 lightVector = input.WorldPosition - lightPosition;
-	float3 lightNormal = normalize(-lightVector).xyz;
-	float4 cameraVector = cameraPosition - input.WorldPosition;
-	float3 cameraNormal = normalize(cameraVector).xyz;
-	float3 reflectionVector = lightVector.xyz - 2 * (dot(lightVector.xyz, input.Normal) * input.Normal);
+    float3 normal = normalize(input.Normal);
+    float3 lightVector = lightPosition.xyz - input.WorldPosition.xyz;
+	float3 lightNormal = normalize(lightVector);
+    float3 cameraVector = cameraPosition.xyz - input.WorldPosition.xyz;
+	float3 cameraNormal = normalize(cameraVector);
+    float3 reflectionVector = lightVector - 2 * (dot(lightVector.xyz, normal) * normal);
 	float3 reflectionNormal = normalize(reflectionVector);
-	float reflectionAngle = dot(reflectionNormal, cameraNormal);
+	float reflectionAngle = -dot(reflectionNormal, cameraNormal);
+    reflectionAngle = max(0, reflectionAngle);
 	
-	float lightStrength = max(0, dot(lightNormal, input.Normal));
-	float specularStrength = max(0, pow(reflectionAngle, shininess));
-	outputColour = float4((ambientColour + difuseColour * lightStrength + specularColour * specularStrength).xyz, 1);
+    float lightStrength = max(0, dot(lightNormal, normal));
+    float specularStrength = pow(reflectionAngle, shininess);
+	
+    if (includeAmbient)
+        outputColour.xyz += ambientColour;
+	if(includeDiffuse)
+        outputColour.xyz += difuseColour * lightStrength;
+	if(includeSpecular)
+        outputColour.xyz += specularColour * specularStrength;
+    //outputColour = float4((ambientColour + difuseColour * lightStrength + specularColour * specularStrength).xyz, 1);
 	
 	// "solljus"
 	if (debugDirectionalLight)
 	{
-		lightVector.xyz = lightPosition.xyz;
-		
+		lightVector = lightPosition.xyz;
+        lightNormal = normalize(lightVector);
 		outputColour = float4(difuseColour.xyz * lightStrength, 1);
 	}
 

@@ -55,7 +55,7 @@ void OurTestScene::InitiateModels() {
 	models["smallPlanet"]->SetTransform({ 5, 0, 0 }, { 0.4f, 0.2f, -0.5f }, 0.5);
 	models["smallPlanet"]->SetRotation({ 0, 1, 0 }, true);
 	models["moon"]->SetTransform({ 3, 0, 0 }, { 0, 1, 0 }, 0.5);
-	models["longship"]->SetTransform({ 0, 1, 0 }, { 0, 0, 0 }, 0.4f);
+	models["longship"]->SetTransform({ 0, 1, 0 }, { 1, 0, 0 }, 0.4f);
 
 	models["smallPlanet"]->SetRotateState(true, true);
 	models["moon"]->SetRotateState(true, false);
@@ -83,6 +83,10 @@ void OurTestScene::InitiateModels() {
 
 	models["secondHand"]->SetAngleSpeed(0.5);
 	models["crate"]->SetAngleSpeed(5);
+
+	//TODO remove debug
+	if(auto model = dynamic_cast<OBJModel*>(models["star"]))
+		model->UpdateSpecular({0.2f, 0.3f, 0.6f}, {1, 1, 1});
 }
 
 void OurTestScene::Init()
@@ -124,8 +128,8 @@ void OurTestScene::Update(float dt, InputHandler* input_handler)
 	for (auto keyValue : models)
 		keyValue.second->UpdateTransform();
 
-	models["light"]->SetTranslation({ 20 , 10, 20});
-	//models["light"]->SetTranslation({ 20 * sin(angle / 10), 10, 20 * cos(angle / 10) });
+	//models["light"]->SetTranslation({ 20 , 10, 20});
+	models["light"]->SetTranslation({ 20 * sin(angle / 10), 10, 20 * cos(angle / 10) });
 
 	// Increment the rotation angle.
 	angle += angle_vel * dt;
@@ -149,19 +153,35 @@ void OurTestScene::UpdateCamera(float dt, InputHandler* input_handler) {
 		camera->rotate({ 0, 0, cameraSpeed * dt * 3.0f });
 	if (input_handler->IsKeyPressed(Keys::E))
 		camera->rotate({ 0, 0, -cameraSpeed * dt * 3.0f });
-	if (input_handler->IsKeyPressed(Keys::Tab))
+	if (input_handler->IsKeyPressed(Keys::Tab)) {
 		camera->SetZeroRoll();
-
+		camera->ResetScale();
+	}
 
 	// Basic camera control
-	if (input_handler->IsKeyPressed(Keys::Up) || input_handler->IsKeyPressed(Keys::W))
+	if (input_handler->IsKeyPressed(Keys::W))
 		camera->move({ 0.0f, 0.0f, -cameraSpeed * dt });
-	if (input_handler->IsKeyPressed(Keys::Down) || input_handler->IsKeyPressed(Keys::S))
+	if (input_handler->IsKeyPressed(Keys::S))
 		camera->move({ 0.0f, 0.0f, cameraSpeed * dt });
-	if (input_handler->IsKeyPressed(Keys::Right) || input_handler->IsKeyPressed(Keys::D))
+	if (input_handler->IsKeyPressed(Keys::D))
 		camera->move({ cameraSpeed * dt, 0.0f, 0.0f });
-	if (input_handler->IsKeyPressed(Keys::Left) || input_handler->IsKeyPressed(Keys::A))
+	if (input_handler->IsKeyPressed(Keys::A))
 		camera->move({ -cameraSpeed * dt, 0.0f, 0.0f });
+
+	float scaleSpeed = cameraSpeed * dt / 20;
+
+	if (input_handler->IsKeyPressed(Keys::Up))
+		camera->Scale({ 0, 0, scaleSpeed });
+	if(input_handler->IsKeyPressed(Keys::Down))
+		camera->Scale({ 0, 0,-scaleSpeed });
+	if(input_handler->IsKeyPressed(Keys::Right))
+		camera->Scale({ scaleSpeed , 0, 0 });
+	if(input_handler->IsKeyPressed(Keys::Left))
+		camera->Scale({ -scaleSpeed, 0, 0 });
+	if (input_handler->IsKeyPressed(Keys::Plus))
+		camera->Scale({ 0, scaleSpeed, 0 });
+	if (input_handler->IsKeyPressed(Keys::Minus))
+		camera->Scale({ 0, -scaleSpeed, 0 });
 }
 
 //
@@ -277,9 +297,6 @@ void OurTestScene::UpdateLightAndCameraBuffer(const vec4f& LightPosition, const 
 	D3D11_MAPPED_SUBRESOURCE resource;
 	dxdevice_context->Map(lightAndCameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 	auto matrix_buffer_ = (LightAndCameraBuffer*)resource.pData;
-
-	//std::cout << LightPosition << std::endl;
-
 	matrix_buffer_->LightPosition = LightPosition;
 	matrix_buffer_->CameraPosition = CameraPosition;
 	dxdevice_context->Unmap(lightAndCameraBuffer, 0);
@@ -305,6 +322,6 @@ void OurTestScene::UpdateMaterialBuffer(const Material& material) {
 	auto matrix_buffer_ = (PhongMaterial*)resource.pData;
 	matrix_buffer_->kA = vec4f(material.Ka, 1);
 	matrix_buffer_->kD = vec4f(material.Kd, 1);
-	matrix_buffer_->kS = vec4f(material.Ks, 1);
+	matrix_buffer_->kS = vec4f(material.Ks, material.shininess);
 	dxdevice_context->Unmap(sceneMaterialBuffer, 0);
 }

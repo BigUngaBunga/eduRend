@@ -33,8 +33,10 @@ struct Material
 {
 	// Color components (ambient, diffuse & specular),
 	// with default values
-    vec3f Ka = {0.1,0.1,0.1}, Kd = {0.2, 0.1, 0.4}, Ks = {1,1,1};
+    vec3f Ka = {0.1f,0.1f,0.1f}, Kd = {0.2f, 0.1f, 0.4f}, Ks = {1,1,1};
     
+	float shininess = 10.0f;
+
 	std::string name;
 
 	// File paths to textures

@@ -21,7 +21,9 @@ enum Keys {
 	Q = DIK_Q,
 	E = DIK_E,
 	Shift = DIK_LSHIFT,
-	Tab = DIK_TAB
+	Tab = DIK_TAB,
+	Plus = DIK_NUMPADPLUS,
+	Minus = DIK_NUMPADMINUS
 };
 
 class InputHandler {
