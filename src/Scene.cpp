@@ -99,7 +99,7 @@ void OurTestScene::Init()
 
 	// Move camera to (0,0,5)
 	camera->moveTo({ 0, 0, 15 });
-
+	UpdateSamplerDescription();
 	InitiateModels();
 }
 
@@ -109,7 +109,7 @@ void OurTestScene::Init()
 //
 void OurTestScene::Update(float dt, InputHandler* input_handler)
 {
-	UpdateCamera(dt, input_handler);
+	UpdateInput(dt, input_handler);
 	
 	// Now set/update object transformations
 	// This can be done using any sequence of transformation matrices,
@@ -135,16 +135,19 @@ void OurTestScene::Update(float dt, InputHandler* input_handler)
 	angle += angle_vel * dt;
 
 	// Print fps
-	fps_cooldown -= dt;
-	if (fps_cooldown < 0.0)
-	{
-		std::cout << "fps " << (int)(1.0f / dt) << std::endl;
-//		printf("fps %i\n", (int)(1.0f / dt));
-		fps_cooldown = 2.0;
+	if (false) {
+		fps_cooldown -= dt;
+		if (fps_cooldown < 0.0)
+		{
+			std::cout << "fps " << (int)(1.0f / dt) << std::endl;
+			//		printf("fps %i\n", (int)(1.0f / dt));
+			fps_cooldown = 2.0;
+		}
 	}
+
 }
 
-void OurTestScene::UpdateCamera(float dt, InputHandler* input_handler) {
+void OurTestScene::UpdateInput(float dt, InputHandler* input_handler) {
 	float cameraSpeed = input_handler->IsKeyPressed(Keys::Shift) ? camera_vel * 5 : camera_vel;
 
 	//Camera rotation
@@ -182,6 +185,11 @@ void OurTestScene::UpdateCamera(float dt, InputHandler* input_handler) {
 		camera->Scale({ 0, scaleSpeed, 0 });
 	if (input_handler->IsKeyPressed(Keys::Minus))
 		camera->Scale({ 0, -scaleSpeed, 0 });
+
+	if (input_handler->IsKeyClicked(Keys::F))
+		samplerDescriptionSettings.ChangeFilter();
+	if (input_handler->IsKeyClicked(Keys::G))
+		samplerDescriptionSettings.ChangeAddressMode();
 }
 
 //
@@ -194,6 +202,9 @@ void OurTestScene::Render()
 	dxdevice_context->PSSetConstantBuffers(0, 1, &lightAndCameraBuffer);
 	dxdevice_context->PSSetConstantBuffers(1, 1, &sceneMaterialBuffer);
 
+	if (samplerDescriptionSettings.wasChanged) 
+		UpdateSamplerDescription();
+
 	vec4f lightPosition;
 	lightPosition = { models["light"]->GetTransform()->m14, models["light"]->GetTransform()->m24, models["light"]->GetTransform()->m34, 1 };
 	UpdateLightAndCameraBuffer(lightPosition, camera->GetWorldPosition());
@@ -205,30 +216,41 @@ void OurTestScene::Render()
 
 	for (const auto& keyValue : models) {
 		if (auto model = dynamic_cast<OBJModel*>(keyValue.second)) {
-			for (auto const &material : model->GetMaterials()) {
+			for (auto const& material : model->GetMaterials()) {
 				UpdateTransformationBuffer(model->transform, Mview, Mproj);
 				UpdateMaterialBuffer(material);
 				keyValue.second->Render();
 			}
+
+
+			//UpdateTransformationBuffer(model->transform, Mview, Mproj)
+			/*auto indexRanges = model->GetIndexRanges();
+			for (const auto& indexRange : indexRanges) {
+				UpdateMaterialBuffer(model->GetMaterial(indexRange));
+				model->RenderIndex(indexRange);
+			}*/
 		}
-		else if(auto model = dynamic_cast<Cube*>(keyValue.second)) {
+		else if (auto model = dynamic_cast<Cube*>(keyValue.second)) {
 			UpdateTransformationBuffer(model->transform, Mview, Mproj);
 			UpdateMaterialBuffer(model->GetMaterial());
 			model->Render();
 		}
 	}
-
 	
-
-	// Load matrices + Sponza's transformation to the device and render it
-	//UpdateTransformationBuffer(Msponza, Mview, Mproj);
-	//sponza->Render();
 
 	for (auto const& material : sponza->GetMaterials()) {
 		UpdateTransformationBuffer(Msponza, Mview, Mproj);
 		UpdateMaterialBuffer(material);
 		sponza->Render();
 	}
+
+
+	/*UpdateTransformationBuffer(Msponza, Mview, Mproj);
+	auto indexRanges = sponza->GetIndexRanges();
+	for (const auto& indexRange : indexRanges) {
+		UpdateMaterialBuffer(sponza->GetMaterial(indexRange));
+		sponza->RenderIndex(indexRange);
+	}*/
 }
 
 void OurTestScene::Release()
@@ -241,7 +263,7 @@ void OurTestScene::Release()
 	SAFE_RELEASE(transformation_buffer);
 	SAFE_RELEASE(lightAndCameraBuffer);
 	SAFE_RELEASE(sceneMaterialBuffer);
-	// + release other CBuffers
+	SAFE_RELEASE(sampler);
 }
 
 void OurTestScene::WindowResize(int window_width, int window_height)
@@ -250,6 +272,71 @@ void OurTestScene::WindowResize(int window_width, int window_height)
 		camera->aspect = float(window_width) / window_height;
 
 	Scene::WindowResize(window_width, window_height);
+}
+
+void OurTestScene::UpdateSamplerDescription() {
+	D3D11_FILTER filter;
+	D3D11_TEXTURE_ADDRESS_MODE addressMode;
+
+	int numberOfFilters = 3;
+	int numberOfAddressModes = 3;
+	samplerDescriptionSettings.filterType %= numberOfFilters;
+	samplerDescriptionSettings.AddressModeType %= numberOfAddressModes;
+	samplerDescriptionSettings.wasChanged = false;
+
+	std::string filterName;
+	std::string addressModeName;
+
+	switch (samplerDescriptionSettings.filterType)
+	{
+	case 0:
+		filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT;
+		filterName = "point filter";
+		break;
+	case 1:
+		filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		filterName = "linear filter";
+		break;
+	default:
+		filter = D3D11_FILTER::D3D11_FILTER_ANISOTROPIC;
+		filterName = "anisotropic filter";
+		break;
+	}
+	
+	switch (samplerDescriptionSettings.AddressModeType)
+	{
+	case 0:
+		addressMode = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+		addressModeName = "wrap";
+		break;
+	case 1:
+		addressMode = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_CLAMP;
+		addressModeName = "clamp";
+		break;
+	default:
+		addressMode = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR;
+		addressModeName = "mirror";
+		break;
+	}
+
+	std::cout << "Filter type: " << filterName << " Address mode: " << addressModeName << std::endl;
+
+
+	samplerDescriptor = {
+	filter,
+	addressMode, // AddressU
+	addressMode, // AddressV
+	addressMode, // AddressW
+	0.0f, // MipLODBias
+	16, // MaxAnisotropy
+	D3D11_COMPARISON_NEVER, // ComapirsonFunc
+	{ 1.0f, 1.0f, 1.0f, 1.0f }, // BorderColor
+	-FLT_MAX, // MinLOD
+	FLT_MAX, // MaxLOD
+	};
+
+	dxdevice->CreateSamplerState(&samplerDescriptor, &sampler);
+	dxdevice_context->PSSetSamplers(0, 1, &sampler);
 }
 
 void OurTestScene::InitTransformationBuffer()

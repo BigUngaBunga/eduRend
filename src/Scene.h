@@ -66,6 +66,9 @@ class OurTestScene : public Scene
 	// These must match the corresponding shader definitions 
 	//
 
+	ID3D11SamplerState* sampler;
+	D3D11_SAMPLER_DESC samplerDescriptor;
+
 	struct TransformationBuffer
 	{
 		mat4f ModelToWorldMatrix;
@@ -84,6 +87,21 @@ class OurTestScene : public Scene
 		vec4f kA;
 		vec4f kD;
 		vec4f kS;
+	};
+
+	struct SamplerDescriptionSettings {
+		int filterType = 0;
+		int AddressModeType = 0;
+		bool wasChanged;
+
+		void ChangeFilter(){
+			++filterType;
+			wasChanged = true;
+		}
+		void ChangeAddressMode() {
+			++AddressModeType;
+			wasChanged = true;
+		}
 	};
 
 	//
@@ -107,6 +125,9 @@ class OurTestScene : public Scene
 	float angle_vel = fPI / 2;	// ...and its velocity (radians/sec)
 	float camera_vel = 10.0f;	// Camera movement velocity in units/s
 	float fps_cooldown = 0;
+	SamplerDescriptionSettings samplerDescriptionSettings;
+
+	void UpdateSamplerDescription();
 
 	void InitTransformationBuffer();
 
@@ -133,7 +154,7 @@ public:
 	void Init() override;
 
 	void Update(float dt, InputHandler* input_handler) override;
-	void UpdateCamera(float dt, InputHandler* input_handler);
+	void UpdateInput(float dt, InputHandler* input_handler);
 
 	void Render() override;
 

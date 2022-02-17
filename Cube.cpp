@@ -121,6 +121,8 @@ void Cube::Render() const
 	// Bind our index buffer
 	dxdevice_context->IASetIndexBuffer(index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
+	dxdevice_context->PSSetShaderResources(0, 1, &material.diffuse_texture.texture_SRV);
+
 	// Make the drawcall
 	dxdevice_context->DrawIndexed(nbr_indices, 0, 0);
 }

@@ -314,7 +314,25 @@ void OBJModel::Render() const
 	}
 }
 
+void OBJModel::RenderIndex(const IndexRange& indexRange) const {
+	Material material = GetMaterial(indexRange);
+	dxdevice_context->PSSetShaderResources(0, 1, &material.diffuse_texture.texture_SRV);
+	dxdevice_context->DrawIndexed(indexRange.size, indexRange.start, 0);
+}
+
+const Material& OBJModel::GetMaterial(const IndexRange& indexRange) const {
+	return materials[indexRange.mtl_index];
+}
+
+std::vector<OBJModel::IndexRange> OBJModel::GetIndexRanges() const {
+	auto indexRanges = std::vector<IndexRange>();
+	for (auto& irange : index_ranges)
+		indexRanges.push_back(irange);
+	return indexRanges;
+}
+
 const std::vector<Material>& OBJModel::GetMaterials() const { return materials; }
+
 
 void OBJModel::UpdateSpecular(const vec3f& newDiffuseColour, const vec3f& newSpecularColour) {
 	for (Material material : materials) {

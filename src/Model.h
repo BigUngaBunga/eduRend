@@ -139,6 +139,10 @@ public:
 
 	virtual void Render() const;
 
+
+	void RenderIndex(const IndexRange& indexRange) const;
+	const Material& GetMaterial(const IndexRange& indexRange) const;
+	std::vector<IndexRange> GetIndexRanges() const;
 	const std::vector<Material>& GetMaterials() const;
 
 	void UpdateSpecular(const vec3f& newDiffuseColour, const vec3f& newSpecularColour);

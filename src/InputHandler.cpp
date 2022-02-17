@@ -10,7 +10,12 @@
 
 bool InputHandler::ReadKeyboard(){
 	HRESULT result;
-
+	
+	for (size_t i = 0; i < 256; i++)
+	{
+		previousKeyboardState[i] = keyboardState[i];
+	}
+	
 	result = keyboard->GetDeviceState(sizeof(keyboardState), (LPVOID)&keyboardState);
 	if (FAILED(result))
 	{
@@ -42,7 +47,6 @@ bool InputHandler::ReadMouse(){
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -174,6 +178,13 @@ void InputHandler::GetMouseLocation(int& mouseX, int& mouseY){
 
 bool InputHandler::IsKeyPressed(Keys key){
 	if (keyboardState[key] & 0x80){
+		return true;
+	}
+	return false;
+}
+
+bool InputHandler::IsKeyClicked(Keys key) {
+	if (keyboardState[key] & 0x80 && keyboardState[key] != previousKeyboardState[key]) {
 		return true;
 	}
 	return false;

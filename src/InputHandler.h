@@ -20,6 +20,8 @@ enum Keys {
 	D = DIK_D,
 	Q = DIK_Q,
 	E = DIK_E,
+	F = DIK_F,
+	G = DIK_G,
 	Shift = DIK_LSHIFT,
 	Tab = DIK_TAB,
 	Plus = DIK_NUMPADPLUS,
@@ -32,6 +34,7 @@ private:
 	IDirectInputDevice8* keyboard;
 	IDirectInputDevice8* mouse;
 	unsigned char keyboardState[256];
+	unsigned char previousKeyboardState[256];
 	DIMOUSESTATE mouseState, prevMouseState;
 	int screenWidth, screenHeight;
 	int mouseX, mouseY;
@@ -48,6 +51,7 @@ public:
 	bool Update();
 	void GetMouseLocation(int&, int&);
 	bool IsKeyPressed(Keys);
+	bool IsKeyClicked(Keys);
 	LONG GetMouseDeltaX();
 	LONG GetMouseDeltaY();
 };
