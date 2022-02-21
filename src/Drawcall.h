@@ -36,17 +36,28 @@ struct Material
     vec3f Ka = {0.1f,0.1f,0.1f}, Kd = {0.2f, 0.1f, 0.4f}, Ks = {1,1,1};
     
 	float shininess = 10.0f;
+	float hasNormalMap = 1.0f;
 
 	std::string name;
 
+	std::string defaultDiffuseTexture = "assets/textures/floor_diffuse.JPG";
+	std::string defaultNormalMap = "assets/textures/floor_bump.JPG";
 	// File paths to textures
-	std::string Kd_texture_filename = "assets/textures/wood.png";
-	std::string normal_texture_filename;
+	std::string Kd_texture_filename = defaultDiffuseTexture;
+	std::string normal_texture_filename = defaultNormalMap;
 	// + more texture types (extend OBJLoader::LoadMaterials if needed)
 
 	// Device textures
 	Texture diffuse_texture;
+	Texture normal_map;
 	// + other texture types
+
+	bool HasNormalMap() const {
+		bool hasDefaultTexture = Kd_texture_filename == defaultDiffuseTexture;
+		bool hasDefaultNormalMap = defaultNormalMap == normal_texture_filename;
+		return !hasDefaultNormalMap;
+		//return (hasDefaultTexture && hasDefaultNormalMap) || (!hasDefaultTexture && !hasDefaultNormalMap);
+	}
 };
 
 static Material DefaultMaterial = Material();

@@ -34,7 +34,8 @@ float4 PS_main(PSIn input) : SV_Target
 	bool debugTextureCoordinates = false;
 	bool debugNormals = false;
 	
-    bool includeAmbient = true;
+    bool includeAmbient = kD.w == 1;
+    //bool includeAmbient = true;
     bool includeDiffuse = true;
     bool includeSpecular = true;
 	
@@ -87,5 +88,8 @@ float4 PS_main(PSIn input) : SV_Target
 	if (debugTextureCoordinates)
 		outputColour = float4(input.TexCoord, 0, 1);
 
+    if (kD.w < 1.0f)
+        outputColour = float4(0.5f, 0.5f, 0.0f, 1.0f);
+	
 	return outputColour;
 }

@@ -113,6 +113,13 @@ void Model::LoadTexture(Material& material) {
 			<< (SUCCEEDED(hr) ? " - OK" : "- FAILED") << std::endl;
 	}
 
+	if (material.normal_texture_filename.size()) {
+
+		hr = LoadTextureFromFile(dxdevice, dxdevice_context, material.normal_texture_filename.c_str(), &material.normal_map);
+		std::cout << "\t" << material.normal_texture_filename
+			<< (SUCCEEDED(hr) ? " - OK" : "- FAILED") << std::endl;
+	}
+
 	// + other texture types here - see Material class
 		// ...
 }
@@ -269,7 +276,8 @@ OBJModel::OBJModel(
 
 	std::cout << "Number of materials in mesh: " << mesh->materials.size() << std::endl;
 	for (auto const& material : mesh->materials) {
-		std::cout << "Ambient: " << material.Ka << " Diffuse: " << material.Kd << " Specular: " << material.Ks << std::endl;
+		//std::cout << "Ambient: " << material.Ka << " Diffuse: " << material.Kd << " Specular: " << material.Ks << std::endl;
+		std::cout << "Diffuse texture: " << material.Kd_texture_filename << " Normal map texture: " << material.normal_texture_filename << std::endl;
 	}
 
 
@@ -311,16 +319,6 @@ void OBJModel::Render() const
 }
 
 const std::vector<Material>& OBJModel::GetMaterials() const { return materials; }
-
-
-void OBJModel::UpdateSpecular(const vec3f& newDiffuseColour, const vec3f& newSpecularColour) {
-	for (Material material : materials) {
-		material.Kd = newDiffuseColour;
-		material.Ks = newSpecularColour;
-		std::cout << "Ambient: " << material.Ka << " Diffuse: " << material.Kd << " Specular: " << material.Ks << std::endl;
-	}
-		
-}
 
 OBJModel::~OBJModel()
 {

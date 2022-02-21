@@ -141,8 +141,6 @@ public:
 
 	const std::vector<Material>& GetMaterials() const;
 
-	void UpdateSpecular(const vec3f& newDiffuseColour, const vec3f& newSpecularColour);
-
 	~OBJModel();
 };
 

@@ -83,10 +83,6 @@ void OurTestScene::InitiateModels() {
 
 	models["secondHand"]->SetAngleSpeed(0.5);
 	models["crate"]->SetAngleSpeed(5);
-
-	//TODO remove debug
-	if(auto model = dynamic_cast<OBJModel*>(models["star"]))
-		model->UpdateSpecular({0.2f, 0.3f, 0.6f}, {1, 1, 1});
 }
 
 void OurTestScene::Init()
@@ -214,13 +210,23 @@ void OurTestScene::Render()
 	Mproj = camera->get_ProjectionMatrix();
 
 
+
 	for (const auto& keyValue : models) {
 		if (auto model = dynamic_cast<OBJModel*>(keyValue.second)) {
-			for (auto const& material : model->GetMaterials()) {
+			/*for (auto const& material : model->GetMaterials()) {
 				UpdateTransformationBuffer(model->transform, Mview, Mproj);
-				UpdateMaterialBuffer(material);
+				
+				if (keyValue.first == "longship")
+					std::cout << "Material: " << material.name << " has normal map: "<< material.HasNormalMap() << std::endl;
+				updateMaterial(material);
 				keyValue.second->Render();
-			}
+			}*/
+
+			//TODO gör att varje material uppdateras och ritas ut för sig. Så att normaler bara måste beräknas för modeller med normalkartor
+
+			UpdateTransformationBuffer(model->transform, Mview, Mproj);
+			UpdateMaterialBuffer(model->GetMaterials()[0]);
+			keyValue.second->Render();
 		}
 		else if (auto model = dynamic_cast<Cube*>(keyValue.second)) {
 			UpdateTransformationBuffer(model->transform, Mview, Mproj);
@@ -235,6 +241,8 @@ void OurTestScene::Render()
 		UpdateMaterialBuffer(material);
 		sponza->Render();
 	}
+
+	
 }
 
 void OurTestScene::Release()
@@ -392,9 +400,7 @@ void OurTestScene::UpdateMaterialBuffer(const Material& material) {
 	dxdevice_context->Map(sceneMaterialBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 	auto matrix_buffer_ = (PhongMaterial*)resource.pData;
 	matrix_buffer_->kA = vec4f(material.Ka, 1);
-	matrix_buffer_->kD = vec4f(material.Kd, 1);
+	matrix_buffer_->kD = vec4f(material.Kd, material.HasNormalMap());
 	matrix_buffer_->kS = vec4f(material.Ks, material.shininess);
 	dxdevice_context->Unmap(sceneMaterialBuffer, 0);
-
-
 }
