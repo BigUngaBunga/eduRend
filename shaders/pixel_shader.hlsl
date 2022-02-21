@@ -34,7 +34,7 @@ float4 PS_main(PSIn input) : SV_Target
 	bool debugTextureCoordinates = false;
 	bool debugNormals = false;
 	
-    bool includeAmbient = false;
+    bool includeAmbient = true;
     bool includeDiffuse = true;
     bool includeSpecular = true;
 	
@@ -45,6 +45,9 @@ float4 PS_main(PSIn input) : SV_Target
     float4 outputColour = float4(0, 0, 0, 1);
 	
     diffuseColour = texDiffuse.Sample(textureSampler, input.TexCoord).xyz;
+	
+    float ambientTextureStrength = 0.25f;
+    float3 texturedAmbientColour = ambientColour * diffuseColour * ambientTextureStrength;
 	
     float3 lightVector;
 	
@@ -68,11 +71,12 @@ float4 PS_main(PSIn input) : SV_Target
     float specularStrength = pow(reflectionAngle, shininess);
 	
     if (includeAmbient)
-        outputColour.xyz += ambientColour;
+        outputColour.xyz += texturedAmbientColour;
 	if(includeDiffuse)
         outputColour.xyz += diffuseColour * lightStrength;
-	if(includeSpecular)
-        outputColour.xyz += specularColour * specularStrength;
+    if (includeSpecular)
+        outputColour.xyz += specularColour * specularStrength * diffuseColour;
+        
 
 	// Debug shading #1: map and return normal as a color, i.e. from [-1,1]->[0,1] per component
 	// The 4:th component is opacity and should be = 1

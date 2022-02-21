@@ -221,14 +221,6 @@ void OurTestScene::Render()
 				UpdateMaterialBuffer(material);
 				keyValue.second->Render();
 			}
-
-
-			//UpdateTransformationBuffer(model->transform, Mview, Mproj)
-			/*auto indexRanges = model->GetIndexRanges();
-			for (const auto& indexRange : indexRanges) {
-				UpdateMaterialBuffer(model->GetMaterial(indexRange));
-				model->RenderIndex(indexRange);
-			}*/
 		}
 		else if (auto model = dynamic_cast<Cube*>(keyValue.second)) {
 			UpdateTransformationBuffer(model->transform, Mview, Mproj);
@@ -243,14 +235,6 @@ void OurTestScene::Render()
 		UpdateMaterialBuffer(material);
 		sponza->Render();
 	}
-
-
-	/*UpdateTransformationBuffer(Msponza, Mview, Mproj);
-	auto indexRanges = sponza->GetIndexRanges();
-	for (const auto& indexRange : indexRanges) {
-		UpdateMaterialBuffer(sponza->GetMaterial(indexRange));
-		sponza->RenderIndex(indexRange);
-	}*/
 }
 
 void OurTestScene::Release()

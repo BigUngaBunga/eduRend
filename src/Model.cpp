@@ -108,11 +108,7 @@ void Model::LoadTexture(Material& material) {
 	//
 	if (material.Kd_texture_filename.size()) {
 
-		hr = LoadTextureFromFile(
-			dxdevice,
-			dxdevice_context,
-			material.Kd_texture_filename.c_str(),
-			&material.diffuse_texture);
+		hr = LoadTextureFromFile( dxdevice, dxdevice_context, material.Kd_texture_filename.c_str(),	&material.diffuse_texture);
 		std::cout << "\t" << material.Kd_texture_filename
 			<< (SUCCEEDED(hr) ? " - OK" : "- FAILED") << std::endl;
 	}
@@ -218,7 +214,7 @@ OBJModel::OBJModel(
 	transform = GetBaseTransform();
 
 	// Load the OBJ
-	OBJLoader* mesh = new OBJLoader();
+	auto* mesh = new OBJLoader();
 	mesh->Load(objfile);
 
 	// Load and organize indices in ranges per drawcall (material)
@@ -312,23 +308,6 @@ void OBJModel::Render() const
 		// Make the drawcall
 		dxdevice_context->DrawIndexed(irange.size, irange.start, 0);
 	}
-}
-
-void OBJModel::RenderIndex(const IndexRange& indexRange) const {
-	Material material = GetMaterial(indexRange);
-	dxdevice_context->PSSetShaderResources(0, 1, &material.diffuse_texture.texture_SRV);
-	dxdevice_context->DrawIndexed(indexRange.size, indexRange.start, 0);
-}
-
-const Material& OBJModel::GetMaterial(const IndexRange& indexRange) const {
-	return materials[indexRange.mtl_index];
-}
-
-std::vector<OBJModel::IndexRange> OBJModel::GetIndexRanges() const {
-	auto indexRanges = std::vector<IndexRange>();
-	for (auto& irange : index_ranges)
-		indexRanges.push_back(irange);
-	return indexRanges;
 }
 
 const std::vector<Material>& OBJModel::GetMaterials() const { return materials; }

@@ -133,7 +133,7 @@ HRESULT LoadCubeTextureFromFile(
     HRESULT hr;
 
     // Load from disk into a raw RGBA buffer
-    stbi_set_flip_vertically_on_load(1);
+    stbi_set_flip_vertically_on_load(0);
     int image_width = 0;
     int image_height = 0;
     unsigned char* image_data[6];
