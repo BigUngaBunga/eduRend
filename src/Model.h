@@ -73,6 +73,8 @@ public:
 	vec4f GetTranslation() const;
 	mat4f* GetTransform();
 
+	void CalculateTangentAndBinormal(Vertex& vertex0, Vertex& vertex1, Vertex& vertex2) const;
+
 	Model(
 		ID3D11Device* dxdevice, 
 		ID3D11DeviceContext* dxdevice_context) 
@@ -138,9 +140,9 @@ public:
 		ID3D11DeviceContext* dxdevice_context);
 
 	virtual void Render() const;
-
-	const std::vector<Material>& GetMaterials() const;
-
+	void RenderIndexRange(const int& indexRangeIndex) const;
+	int GetIndexRangeSize() const;
+	const Material& GetMaterial(const int& indexRangeIndex) const;
 	~OBJModel();
 };
 

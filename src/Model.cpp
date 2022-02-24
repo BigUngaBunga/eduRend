@@ -100,6 +100,21 @@ vec4f Model::GetTranslation() const {
 
 mat4f* Model::GetTransform() { return &transform; }
 
+void Model::CalculateTangentAndBinormal(Vertex& vertex0, Vertex& vertex1, Vertex& vertex2) const {
+	vec3f e = vertex2.Pos - vertex0.Pos;
+	vec3f d = vertex1.Pos - vertex0.Pos;
+
+	vec2f g = vertex2.TexCoord - vertex0.TexCoord;
+	vec2f f = vertex1.TexCoord - vertex0.TexCoord;
+
+	float determinant = 1 / (f.x * g.y - f.y * g.x);
+
+	vec3f tangent = {determinant * (g.y * d.x- f.y * e.x), determinant * (g.y * d.y - f.y * e.y), determinant * (g.y * d.z - f.y * e.z) };
+	vec3f binormal = { determinant * ( f.x * e.x - g.x * d.x), determinant * (f.x * e.y - g.x * d.y), determinant * (f.x * e.z - g.x * d.z) };
+
+	vertex0.Tangent = vertex1.Tangent = vertex2.Tangent = tangent.normalize();
+	vertex0.Binormal = vertex1.Binormal = vertex2.Binormal = binormal.normalize();
+}
 
 
 void Model::LoadTexture(Material& material) {
@@ -235,6 +250,9 @@ OBJModel::OBJModel(
 		for (auto& tri : dc.tris)
 			indices.insert(indices.end(), tri.vi, tri.vi + 3);
 
+		for (int i = 0; i < indices.size(); i += 3) // For all triangles
+			CalculateTangentAndBinormal(mesh->vertices[indices[i + 0]], mesh->vertices[indices[i + 1]], mesh->vertices[indices[i + 2]]);
+
 		// Create a range
 		unsigned int i_size = (unsigned int)dc.tris.size() * 3;
 		int mtl_index = dc.mtl_index > -1 ? dc.mtl_index : -1;
@@ -318,7 +336,32 @@ void OBJModel::Render() const
 	}
 }
 
-const std::vector<Material>& OBJModel::GetMaterials() const { return materials; }
+void OBJModel::RenderIndexRange(const int& indexRangeIndex) const
+{
+	// Bind vertex buffer
+	const UINT32 stride = sizeof(Vertex);
+	const UINT32 offset = 0;
+	dxdevice_context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride, &offset);
+
+	// Bind index buffer
+	dxdevice_context->IASetIndexBuffer(index_buffer, DXGI_FORMAT_R32_UINT, 0);
+
+	auto& indexRange = index_ranges[indexRangeIndex];
+	const Material& mtl = materials[indexRange.mtl_index];
+
+	// Bind diffuse texture to slot t0 of the PS
+	dxdevice_context->PSSetShaderResources(0, 1, &mtl.diffuse_texture.texture_SRV);
+	dxdevice_context->PSSetShaderResources(1, 1, &mtl.normal_map.texture_SRV);
+
+	// Make the drawcall
+	dxdevice_context->DrawIndexed(indexRange.size, indexRange.start, 0);
+}
+
+int OBJModel::GetIndexRangeSize() const { return index_ranges.size(); }
+
+const Material& OBJModel::GetMaterial(const int& indexRangeIndex) const {
+	return materials[index_ranges[indexRangeIndex].mtl_index];
+}
 
 OBJModel::~OBJModel()
 {

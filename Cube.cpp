@@ -101,10 +101,13 @@ void Cube::AddASquare() {
 	indices.push_back(vertexD);
 	indices.push_back(vertexC);
 	indices.push_back(vertexB);
+	CalculateTangentAndBinormal(vertices[vertexD], vertices[vertexC], vertices[vertexB]);
+
 
 	indices.push_back(vertexC);
 	indices.push_back(vertexA);
 	indices.push_back(vertexB);
+	CalculateTangentAndBinormal(vertices[vertexC], vertices[vertexA], vertices[vertexB]);
 
 	nbr_indices += 4;
 }

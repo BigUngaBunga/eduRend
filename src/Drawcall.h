@@ -55,8 +55,7 @@ struct Material
 	bool HasNormalMap() const {
 		bool hasDefaultTexture = Kd_texture_filename == defaultDiffuseTexture;
 		bool hasDefaultNormalMap = defaultNormalMap == normal_texture_filename;
-		return !hasDefaultNormalMap;
-		//return (hasDefaultTexture && hasDefaultNormalMap) || (!hasDefaultTexture && !hasDefaultNormalMap);
+		return (hasDefaultTexture && hasDefaultNormalMap) || (!hasDefaultTexture && !hasDefaultNormalMap);
 	}
 };
 

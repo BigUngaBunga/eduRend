@@ -213,20 +213,13 @@ void OurTestScene::Render()
 
 	for (const auto& keyValue : models) {
 		if (auto model = dynamic_cast<OBJModel*>(keyValue.second)) {
-			/*for (auto const& material : model->GetMaterials()) {
-				UpdateTransformationBuffer(model->transform, Mview, Mproj);
-				
-				if (keyValue.first == "longship")
-					std::cout << "Material: " << material.name << " has normal map: "<< material.HasNormalMap() << std::endl;
-				updateMaterial(material);
-				keyValue.second->Render();
-			}*/
-
-			//TODO gör att varje material uppdateras och ritas ut för sig. Så att normaler bara måste beräknas för modeller med normalkartor
-
 			UpdateTransformationBuffer(model->transform, Mview, Mproj);
-			UpdateMaterialBuffer(model->GetMaterials()[0]);
-			keyValue.second->Render();
+
+			int materialSize = model->GetIndexRangeSize();
+			for (int i = 0; i < materialSize; ++i) {
+				UpdateMaterialBuffer(model->GetMaterial(i));
+				model->RenderIndexRange(i);
+			}
 		}
 		else if (auto model = dynamic_cast<Cube*>(keyValue.second)) {
 			UpdateTransformationBuffer(model->transform, Mview, Mproj);
@@ -235,14 +228,12 @@ void OurTestScene::Render()
 		}
 	}
 	
-
-	for (auto const& material : sponza->GetMaterials()) {
-		UpdateTransformationBuffer(Msponza, Mview, Mproj);
-		UpdateMaterialBuffer(material);
-		sponza->Render();
+	UpdateTransformationBuffer(Msponza, Mview, Mproj);
+	int materialSize = sponza->GetIndexRangeSize();
+	for (int i = 0; i < materialSize; ++i) {
+		UpdateMaterialBuffer(sponza->GetMaterial(i));
+		sponza->RenderIndexRange(i);
 	}
-
-	
 }
 
 void OurTestScene::Release()
@@ -282,16 +273,16 @@ void OurTestScene::UpdateSamplerDescription() {
 	switch (samplerDescriptionSettings.filterType)
 	{
 	case 0:
-		filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT;
-		filterName = "point filter";
+		filter = D3D11_FILTER::D3D11_FILTER_ANISOTROPIC;
+		filterName = "anisotropic filter";
 		break;
 	case 1:
 		filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		filterName = "linear filter";
 		break;
 	default:
-		filter = D3D11_FILTER::D3D11_FILTER_ANISOTROPIC;
-		filterName = "anisotropic filter";
+		filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT;
+		filterName = "point filter";
 		break;
 	}
 	
