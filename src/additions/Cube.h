@@ -21,7 +21,7 @@ private:
 	void InitializeRender();
 
 public:
-	Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const float length);
+	Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const float length, bool invertNormals = false);
 	const Material& GetMaterial() const;
 	virtual void Render() const;
 };

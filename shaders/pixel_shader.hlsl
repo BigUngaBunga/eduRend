@@ -1,6 +1,7 @@
 
 Texture2D texDiffuse : register(t0);
 Texture2D normalMap : register(t1);
+TextureCube cubeMap : register(t2);
 
 SamplerState textureSampler : register(s0);
 
@@ -55,35 +56,31 @@ float3 CalculateNormal(float3 tangent, float3 binormal, float3 normal, float2 te
     return normalize(mul(tbnMatrix, localNormal));
 }
 
-float CalculateSpecularStrength(float3 lightVector, float3 cameraVector, float3 normal, float shininess)
+float CalculateSpecularStrength(float3 reflectionVector, float3 cameraVector, float shininess)
 {
     float3 cameraNormal = normalize(cameraVector);
-    float3 reflectionVector = reflect(lightVector, normal);
     float3 reflectionNormal = normalize(reflectionVector);
     float reflectionAngle = max(0, -dot(reflectionNormal, cameraNormal));
 	
     return pow(reflectionAngle, shininess);
 }
 
-float4 PS_main(PSIn input) : SV_Target
+float4 PhongShader(PSIn input)
 {
-	bool directionalLight = false;
-	bool debugTextureCoordinates = false;
-    float debugNormals = 0; //0 inget, 1 normaler, 2 tangenter, 3 binormaler;
-	
+    bool directionalLight = false;
     bool includeAmbient = true;
     bool includeDiffuse = true;
     bool includeSpecular = true;
-	
     bool manyLightSources = false;
     
-	float3 ambientColour = kA.xyz;
-	float3 diffuseColour = kD.xyz;
-	float3 specularColour = kS.xyz;
+    float3 ambientColour = kA.xyz;
+    float3 diffuseColour = kD.xyz;
+    float3 specularColour = kS.xyz;
     float shininess = kS.w;
     bool hasNormalMap = kD.w;
+    bool isSkybox = kA.w;
     float4 outputColour = float4(0, 0, 0, 1);
-	
+    
     diffuseColour = texDiffuse.Sample(textureSampler, input.TexCoord).xyz;
 	
     float ambientTextureStrength = 0.25f;
@@ -91,12 +88,68 @@ float4 PS_main(PSIn input) : SV_Target
 	
     float3 lightVector = directionalLight ? lightPosition.xyz : lightPosition.xyz - input.WorldPosition.xyz;
     float3 normal = hasNormalMap ? CalculateNormal(input.Tangent, input.Binormal, input.Normal, input.TexCoord) : CalculateNormal(input.Normal);
-	float3 lightNormal = normalize(lightVector);
+    float3 lightNormal = normalize(lightVector);
     float3 cameraVector = cameraPosition.xyz - input.WorldPosition.xyz;
-    float lightStrength = max(0, dot(lightNormal, normal));;
-    float specularStrength = CalculateSpecularStrength(lightVector, cameraVector, normal, shininess);
+    float lightStrength = max(0, dot(lightNormal, normal));
+    float3 reflectionVector = reflect(lightVector, normal);
+    float specularStrength = CalculateSpecularStrength(reflectionVector, cameraVector, shininess);
     
-    //if (manyLightSources)
+    float3 cubeMapColour = cubeMap.Sample(textureSampler, reflectionVector).xyz;
+	
+    if (includeAmbient)
+        outputColour.xyz += texturedAmbientColour;
+    if (includeDiffuse)
+        outputColour.xyz += diffuseColour * lightStrength;
+    if (includeSpecular)
+        outputColour.xyz += specularColour * specularStrength * cubeMapColour;
+    
+    return outputColour;
+}
+
+float4 SkyboxShader(PSIn input)
+{
+    float3 cameraVector = cameraPosition.xyz - input.WorldPosition.xyz;
+    float3 cubeMapColour = cubeMap.Sample(textureSampler, cameraVector).xyz;
+    return cubeMap.Sample(textureSampler, cameraVector); //float4(cubeMapColour.xyz, 1);
+
+}
+
+float4 PS_main(PSIn input) : SV_Target
+{  
+	bool debugTextureCoordinates = false;
+    float debugNormals = 0; //0 inget, 1 normaler, 2 tangenter, 3 binormaler;
+    
+    
+    bool isSkybox = kA.w;
+    float4 outputColour = float4(0, 0, 0, 1);
+    
+    if (isSkybox)
+        outputColour = SkyboxShader(input);
+    else
+        outputColour = PhongShader(input);
+    
+	// Debug shading #1: map and return normal as a color, i.e. from [-1,1]->[0,1] per component
+	// The 4:th component is opacity and should be = 1
+    if (debugNormals == 1)
+    {
+        float3 normal = kD.w ? CalculateNormal(input.Tangent, input.Binormal, input.Normal, input.TexCoord) : CalculateNormal(input.Normal);
+        outputColour = float4(normal * 0.5 + 0.5, 1);
+    }
+    else if (debugNormals == 2)
+        outputColour = float4(input.Tangent * 0.5 + 0.5, 1);
+    else if (debugNormals == 3)
+        outputColour = float4(input.Binormal * 0.5 + 0.5, 1);
+    
+	// Debug shading #2: map and return texture coordinates as a color (blue = 0)
+	if (debugTextureCoordinates)
+		outputColour = float4(input.TexCoord, 0, 1);
+	
+	return outputColour;
+}
+
+
+
+//if (manyLightSources)
     //{
     //    for (int i = 0; i < numberOfLights; ++i)
     //    {
@@ -110,27 +163,3 @@ float4 PS_main(PSIn input) : SV_Target
     //    lightStrength = max(0, dot(lightNormal, normal));
     //    specularStrength = CalculateSpecularStrength(lightVector, cameraVector, normal, shininess);
     //}
-    
-	
-    if (includeAmbient)
-        outputColour.xyz += texturedAmbientColour;
-	if(includeDiffuse)
-        outputColour.xyz += diffuseColour * lightStrength;
-    if (includeSpecular)
-        outputColour.xyz += specularColour * specularStrength * diffuseColour;
-
-	// Debug shading #1: map and return normal as a color, i.e. from [-1,1]->[0,1] per component
-	// The 4:th component is opacity and should be = 1
-	if (debugNormals == 1)
-		outputColour = float4(normal * 0.5 + 0.5, 1);
-    else if (debugNormals == 2)
-        outputColour = float4(input.Tangent * 0.5 + 0.5, 1);
-    else if (debugNormals == 3)
-        outputColour = float4(input.Binormal * 0.5 + 0.5, 1);
-    
-	// Debug shading #2: map and return texture coordinates as a color (blue = 0)
-	if (debugTextureCoordinates)
-		outputColour = float4(input.TexCoord, 0, 1);
-	
-	return outputColour;
-}

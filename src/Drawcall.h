@@ -37,6 +37,7 @@ struct Material
     
 	float shininess = 10.0f;
 	float hasNormalMap = 1.0f;
+	float isSkybox = 0.0f;
 
 	std::string name;
 

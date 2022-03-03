@@ -3,10 +3,12 @@
 #include <cmath>
 using std::cout;
 
-Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const float length) : Model(dxdevice, dxdevice_context) {
+Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const float length, bool invertNormals) : Model(dxdevice, dxdevice_context) {
 
 	float point = length / 2;
 	std::array<vec3f, 6> cubeNormals = { vec3f{0, 0, 1}, vec3f{0, 0, -1}, vec3f{-1, 0, 0}, vec3f{1, 0, 0}, vec3f{0, 1, 0}, vec3f{0, -1, 0} };
+	if (invertNormals)
+		for (vec3f& normal : cubeNormals) normal *= -1;
 
 	std::array<std::array<vec3f, 4>, 2> cubeCorners = { vec3f{point, point, point}, vec3f{-point, point, point}, vec3f{point, point, -point}, vec3f{-point, point, -point},
 					 vec3f{point, -point, point}, vec3f{-point, -point, point}, vec3f{point, -point, -point}, vec3f{-point, -point, -point} };
@@ -30,6 +32,7 @@ Cube::Cube(ID3D11Device* dxdevice, ID3D11DeviceContext* dxdevice_context, const 
 
 	InitializeRender();
 	LoadTexture(material);
+	material.isSkybox = invertNormals;
 }
 
 void Cube::InitializeRender() {

@@ -42,6 +42,7 @@ OurTestScene::OurTestScene(
 //
 void OurTestScene::InitiateModels() {
 	sponza = new OBJModel("assets/crytek-sponza/sponza.obj", dxdevice, dxdevice_context);
+	skybox = new Cube(dxdevice, dxdevice_context, 300, true);
 
 	models.emplace("star", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
 	models.emplace("smallPlanet", new Cube(dxdevice, dxdevice_context, 3));
@@ -87,6 +88,10 @@ void OurTestScene::InitiateModels() {
 
 	models["secondHand"]->SetAngleSpeed(0.5);
 	models["crate"]->SetAngleSpeed(5);
+
+	models.emplace("torus", new OBJModel("assets/torus/torus.obj", dxdevice, dxdevice_context));
+	models["torus"]->SetTransform({ 1.3f, 8.0f, 15.4f }, { 0.0f, -1.0f, 0.3f }, 1.5f);
+	models["torus"]->SetAngleSpeed(0.21f);
 }
 
 void OurTestScene::Init()
@@ -101,6 +106,23 @@ void OurTestScene::Init()
 	camera->moveTo({ 0, 0, 15 });
 	UpdateSamplerDescription();
 	InitiateModels();
+
+	const char* filePaths[6] = { "assets/cubemaps/cubemaps/cloudyhillscube/cloudyhills_posx.png",
+								"assets/cubemaps/cubemaps/cloudyhillscube/cloudyhills_negx.png",
+								"assets/cubemaps/cubemaps/cloudyhillscube/cloudyhills_negy.png",
+								"assets/cubemaps/cubemaps/cloudyhillscube/cloudyhills_posy.png",
+								"assets/cubemaps/cubemaps/cloudyhillscube/cloudyhills_posz.png",
+								"assets/cubemaps/cubemaps/cloudyhillscube/cloudyhills_negz.png"};
+
+	//const char* filePaths[6] = { "assets/cubemaps/cubemaps/brightday/posx.png",
+	//						"assets/cubemaps/cubemaps/brightday/negx.png",
+	//						"assets/cubemaps/cubemaps/brightday/negy.png",
+	//						"assets/cubemaps/cubemaps/brightday/posy.png",
+	//						"assets/cubemaps/cubemaps/brightday/posz.png",
+	//						"assets/cubemaps/cubemaps/brightday/negz.png" };
+
+
+	LoadCubeTextureFromFile(dxdevice, filePaths, &cubeMapTexture);
 
 	//AddLightSource(vec4f_zero);
 	//AddLightSource(vec4f_zero);
@@ -123,6 +145,9 @@ void OurTestScene::Update(float dt, InputHandler* input_handler)
 	// Sponza model-to-world transformation
 	Msponza = mat4f::translation(0, -5, 0) *		 // Move down 5 units
 		mat4f::rotation(fPI / 2, 0.0f, 1.0f, 0.0f); // Rotate pi/2 radians (90 degrees) around y
+
+	mSkybox = mat4f::translation(camera->GetWorldPosition().xyz());// * mat4f::scaling(-1)
+	//camera->get_ViewToWorldMatrix() *
 
 	for (auto keyValue : models)
 		keyValue.second->SetAngle(angle);
@@ -196,6 +221,9 @@ void OurTestScene::UpdateInput(float dt, InputHandler* input_handler) {
 	if (input_handler->IsKeyClicked(Keys::N))
 		displayNormalMaps = !displayNormalMaps;
 
+	if (input_handler->IsKeyClicked(Keys::Z))
+		showSponza = !showSponza;
+
 }
 
 //
@@ -207,6 +235,7 @@ void OurTestScene::Render()
 	dxdevice_context->VSSetConstantBuffers(0, 1, &transformation_buffer);
 	dxdevice_context->PSSetConstantBuffers(0, 1, &lightAndCameraBuffer);
 	dxdevice_context->PSSetConstantBuffers(1, 1, &sceneMaterialBuffer);
+	dxdevice_context->PSSetShaderResources(2, 1, &cubeMapTexture.texture_SRV);
 	//dxdevice_context->PSSetConstantBuffers(2, 1, &lightBuffer);
 
 	if (samplerDescriptionSettings.wasChanged) 
@@ -242,12 +271,19 @@ void OurTestScene::Render()
 		}
 	}
 	
-	UpdateTransformationBuffer(Msponza, Mview, Mproj);
-	int materialSize = sponza->GetIndexRangeSize();
-	for (int i = 0; i < materialSize; ++i) {
-		UpdateMaterialBuffer(sponza->GetMaterial(i));
-		sponza->RenderIndexRange(i);
+	if (showSponza) {
+		UpdateTransformationBuffer(Msponza, Mview, Mproj);
+		int materialSize = sponza->GetIndexRangeSize();
+		for (int i = 0; i < materialSize; ++i) {
+			UpdateMaterialBuffer(sponza->GetMaterial(i));
+			sponza->RenderIndexRange(i);
+		}
 	}
+	
+
+	UpdateTransformationBuffer(mSkybox, Mview, Mproj);
+	UpdateMaterialBuffer(skybox->GetMaterial());
+	skybox->Render();
 }
 
 void OurTestScene::Release()
@@ -349,10 +385,7 @@ void OurTestScene::InitTransformationBuffer()
 	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &transformation_buffer));
 }
 
-void OurTestScene::UpdateTransformationBuffer(
-	mat4f ModelToWorldMatrix,
-	mat4f WorldToViewMatrix,
-	mat4f ProjectionMatrix)
+void OurTestScene::UpdateTransformationBuffer(mat4f ModelToWorldMatrix, mat4f WorldToViewMatrix, mat4f ProjectionMatrix)
 {
 	// Map the resource buffer, obtain a pointer and then write our matrices to it
 	D3D11_MAPPED_SUBRESOURCE resource;
@@ -403,8 +436,8 @@ void OurTestScene::UpdateMaterialBuffer(const Material& material) {
 	D3D11_MAPPED_SUBRESOURCE resource;
 	dxdevice_context->Map(sceneMaterialBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 	auto matrix_buffer_ = (PhongMaterial*)resource.pData;
-	matrix_buffer_->kA = vec4f(material.Ka, 1);
-	matrix_buffer_->kD = vec4f(material.Kd, displayNormalMaps ? material.HasNormalMap() : false);
+	matrix_buffer_->kA = vec4f(material.Ka, material.isSkybox);
+	matrix_buffer_->kD = vec4f(material.Kd, displayNormalMaps && !material.isSkybox ? material.HasNormalMap() : false);
 	matrix_buffer_->kS = vec4f(material.Ks, material.shininess);
 	dxdevice_context->Unmap(sceneMaterialBuffer, 0);
 }

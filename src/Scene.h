@@ -115,11 +115,13 @@ class OurTestScene : public Scene
 	//
 	Camera* camera;
 	OBJModel* sponza;
+	Cube* skybox;
 
 	std::map<std::string, Model*> models = std::map<std::string, Model*>();
 
 	// Model-to-world transformation matrices
 	mat4f Msponza;
+	mat4f mSkybox;
 
 	// World-to-view matrix
 	mat4f Mview;
@@ -131,9 +133,11 @@ class OurTestScene : public Scene
 	float angle_vel = fPI / 2;	// ...and its velocity (radians/sec)
 	float camera_vel = 10.0f;	// Camera movement velocity in units/s
 	float fps_cooldown = 0;
+	bool showSponza = true;
 	bool displayNormalMaps = true;
 	SamplerDescriptionSettings samplerDescriptionSettings;
 	LightBuffer lightBufferStruct;
+	Texture cubeMapTexture;
 
 	void UpdateSamplerDescription();
 
