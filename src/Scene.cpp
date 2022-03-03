@@ -122,8 +122,7 @@ void OurTestScene::Update(float dt, InputHandler* input_handler)
 
 	// Sponza model-to-world transformation
 	Msponza = mat4f::translation(0, -5, 0) *		 // Move down 5 units
-		mat4f::rotation(fPI / 2, 0.0f, 1.0f, 0.0f) * // Rotate pi/2 radians (90 degrees) around y
-		mat4f::scaling(0.05f);						 // The scene is quite large so scale it down to 5%
+		mat4f::rotation(fPI / 2, 0.0f, 1.0f, 0.0f); // Rotate pi/2 radians (90 degrees) around y
 
 	for (auto keyValue : models)
 		keyValue.second->SetAngle(angle);
