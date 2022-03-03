@@ -33,6 +33,7 @@ OurTestScene::OurTestScene(
 	InitTransformationBuffer();
 	InitLightAndCameraBuffer();
 	InitMaterialBuffer();
+	//InitLightBuffer();
 	// + init other CBuffers
 }
 
@@ -46,6 +47,7 @@ void OurTestScene::InitiateModels() {
 	models.emplace("smallPlanet", new Cube(dxdevice, dxdevice_context, 3));
 	models.emplace("moon", new OBJModel("assets/sphere/sphere.obj", dxdevice, dxdevice_context));
 	models.emplace("longship", new OBJModel("assets/longship/longship.obj", dxdevice, dxdevice_context));
+	models.emplace("stationaryLongship", new OBJModel("assets/longship/longship.obj", dxdevice, dxdevice_context));
 
 	models["smallPlanet"]->AddParentModel(models["star"]);
 	models["moon"]->AddParentModel(models["smallPlanet"]);
@@ -56,6 +58,8 @@ void OurTestScene::InitiateModels() {
 	models["smallPlanet"]->SetRotation({ 0, 1, 0 }, true);
 	models["moon"]->SetTransform({ 3, 0, 0 }, { 0, 1, 0 }, 0.5);
 	models["longship"]->SetTransform({ 0, 1, 0 }, { 1, 0, 0 }, 0.4f);
+
+	models["stationaryLongship"]->SetTransform({ 5, 2, 4 }, {0, 0, 0}, 1);
 
 	models["smallPlanet"]->SetRotateState(true, true);
 	models["moon"]->SetRotateState(true, false);
@@ -97,6 +101,9 @@ void OurTestScene::Init()
 	camera->moveTo({ 0, 0, 15 });
 	UpdateSamplerDescription();
 	InitiateModels();
+
+	//AddLightSource(vec4f_zero);
+	//AddLightSource(vec4f_zero);
 }
 
 //
@@ -186,6 +193,10 @@ void OurTestScene::UpdateInput(float dt, InputHandler* input_handler) {
 		samplerDescriptionSettings.ChangeFilter();
 	if (input_handler->IsKeyClicked(Keys::G))
 		samplerDescriptionSettings.ChangeAddressMode();
+
+	if (input_handler->IsKeyClicked(Keys::N))
+		displayNormalMaps = !displayNormalMaps;
+
 }
 
 //
@@ -197,6 +208,7 @@ void OurTestScene::Render()
 	dxdevice_context->VSSetConstantBuffers(0, 1, &transformation_buffer);
 	dxdevice_context->PSSetConstantBuffers(0, 1, &lightAndCameraBuffer);
 	dxdevice_context->PSSetConstantBuffers(1, 1, &sceneMaterialBuffer);
+	//dxdevice_context->PSSetConstantBuffers(2, 1, &lightBuffer);
 
 	if (samplerDescriptionSettings.wasChanged) 
 		UpdateSamplerDescription();
@@ -205,6 +217,9 @@ void OurTestScene::Render()
 	lightPosition = { models["light"]->GetTransform()->m14, models["light"]->GetTransform()->m24, models["light"]->GetTransform()->m34, 1 };
 	UpdateLightAndCameraBuffer(lightPosition, camera->GetWorldPosition());
 
+	//UpdateLightSource(0, lightPosition);
+	//UpdateLightSource(1, camera->GetWorldPosition());
+	//UpdateLightBuffer();
 	// Obtain the matrices needed for rendering from the camera
 	Mview = camera->get_WorldToViewMatrix();
 	Mproj = camera->get_ProjectionMatrix();
@@ -382,8 +397,7 @@ void OurTestScene::InitMaterialBuffer() {
 	MatrixBuffer_desc.MiscFlags = 0;
 	MatrixBuffer_desc.StructureByteStride = 0;
 
-	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &sceneMaterialBuffer));
-	
+	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &sceneMaterialBuffer));	
 }
 
 void OurTestScene::UpdateMaterialBuffer(const Material& material) {
@@ -391,7 +405,33 @@ void OurTestScene::UpdateMaterialBuffer(const Material& material) {
 	dxdevice_context->Map(sceneMaterialBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 	auto matrix_buffer_ = (PhongMaterial*)resource.pData;
 	matrix_buffer_->kA = vec4f(material.Ka, 1);
-	matrix_buffer_->kD = vec4f(material.Kd, material.HasNormalMap());
+	matrix_buffer_->kD = vec4f(material.Kd, displayNormalMaps ? material.HasNormalMap() : false);
 	matrix_buffer_->kS = vec4f(material.Ks, material.shininess);
 	dxdevice_context->Unmap(sceneMaterialBuffer, 0);
+}
+
+void OurTestScene::InitLightBuffer() {
+	HRESULT hr;
+	D3D11_BUFFER_DESC MatrixBuffer_desc = { 0 };
+	MatrixBuffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+	MatrixBuffer_desc.ByteWidth = sizeof(LightBuffer);
+	MatrixBuffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	MatrixBuffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	MatrixBuffer_desc.MiscFlags = 0;
+	MatrixBuffer_desc.StructureByteStride = 0;
+
+	ASSERT(hr = dxdevice->CreateBuffer(&MatrixBuffer_desc, nullptr, &lightBuffer));
+}
+
+void OurTestScene::UpdateLightBuffer() {
+	D3D11_MAPPED_SUBRESOURCE resource;
+	dxdevice_context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	auto matrix_buffer_ = (LightBuffer*)resource.pData;
+	matrix_buffer_->lightSources = lightBufferStruct.lightSources;
+	matrix_buffer_->numberOfLights = lightBufferStruct.numberOfLights;
+	dxdevice_context->Unmap(lightBuffer, 0);
+
+	for (auto vector : matrix_buffer_->lightSources)
+		std::cout << "Vector: " << vector;
+	std::cout << std::endl;
 }

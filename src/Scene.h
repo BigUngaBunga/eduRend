@@ -61,6 +61,7 @@ class OurTestScene : public Scene
 	// + other CBuffers
 	ID3D11Buffer* lightAndCameraBuffer = nullptr;
 	ID3D11Buffer* sceneMaterialBuffer = nullptr;
+	ID3D11Buffer* lightBuffer = nullptr;
 	// 
 	// CBuffer client-side definitions
 	// These must match the corresponding shader definitions 
@@ -87,6 +88,11 @@ class OurTestScene : public Scene
 		vec4f kA;
 		vec4f kD;
 		vec4f kS;
+	};
+
+	struct LightBuffer {
+		int numberOfLights = 0;
+		std::array<vec4f, 8> lightSources;
 	};
 
 	struct SamplerDescriptionSettings {
@@ -125,7 +131,9 @@ class OurTestScene : public Scene
 	float angle_vel = fPI / 2;	// ...and its velocity (radians/sec)
 	float camera_vel = 10.0f;	// Camera movement velocity in units/s
 	float fps_cooldown = 0;
+	bool displayNormalMaps = true;
 	SamplerDescriptionSettings samplerDescriptionSettings;
+	LightBuffer lightBufferStruct;
 
 	void UpdateSamplerDescription();
 
@@ -142,7 +150,20 @@ class OurTestScene : public Scene
 	void InitMaterialBuffer();
 	void UpdateMaterialBuffer(const Material& material);
 
+	void InitLightBuffer();
+	void UpdateLightBuffer();
+
 	void InitiateModels();
+	
+	void AddLightSource(const vec4f& lightSource) {
+		if (lightBufferStruct.numberOfLights >= 0 && lightBufferStruct.numberOfLights < lightBufferStruct.lightSources.size())
+			lightBufferStruct.lightSources[lightBufferStruct.numberOfLights++] = lightSource;
+	}
+
+	void UpdateLightSource(int index, const vec4f& lightSource) {
+		if (index >= 0 && index < lightBufferStruct.lightSources.size())
+			lightBufferStruct.lightSources[index] = lightSource;
+	}
 
 public:
 	OurTestScene(

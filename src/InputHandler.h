@@ -22,6 +22,7 @@ enum Keys {
 	E = DIK_E,
 	F = DIK_F,
 	G = DIK_G,
+	N = DIK_N,
 	Shift = DIK_LSHIFT,
 	Tab = DIK_TAB,
 	Plus = DIK_NUMPADPLUS,

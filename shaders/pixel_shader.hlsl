@@ -17,6 +17,12 @@ cbuffer MaterialBuffer : register(b1)
 	float4 kS;
 };
 
+cbuffer LightSources : register(b2)
+{
+    int numberOfLights;
+    float4 lightPositions[8];
+};
+
 struct PSIn
 {
 	float4 Pos  : SV_Position;
@@ -69,6 +75,8 @@ float4 PS_main(PSIn input) : SV_Target
     bool includeDiffuse = true;
     bool includeSpecular = true;
 	
+    bool manyLightSources = false;
+    
 	float3 ambientColour = kA.xyz;
 	float3 diffuseColour = kD.xyz;
 	float3 specularColour = kS.xyz;
@@ -85,8 +93,24 @@ float4 PS_main(PSIn input) : SV_Target
     float3 normal = hasNormalMap ? CalculateNormal(input.Tangent, input.Binormal, input.Normal, input.TexCoord) : CalculateNormal(input.Normal);
 	float3 lightNormal = normalize(lightVector);
     float3 cameraVector = cameraPosition.xyz - input.WorldPosition.xyz;
-    float lightStrength = max(0, dot(lightNormal, normal));
+    float lightStrength = max(0, dot(lightNormal, normal));;
     float specularStrength = CalculateSpecularStrength(lightVector, cameraVector, normal, shininess);
+    
+    //if (manyLightSources)
+    //{
+    //    for (int i = 0; i < numberOfLights; ++i)
+    //    {
+    //        lightVector = lightPositions[i].xyz - input.WorldPosition.xyz;
+    //        lightStrength += max(0, dot(normalize(lightVector), normal));
+    //        specularStrength += CalculateSpecularStrength(lightVector, cameraVector, normal, shininess);
+    //    }
+    //}
+    //else
+    //{
+    //    lightStrength = max(0, dot(lightNormal, normal));
+    //    specularStrength = CalculateSpecularStrength(lightVector, cameraVector, normal, shininess);
+    //}
+    
 	
     if (includeAmbient)
         outputColour.xyz += texturedAmbientColour;
